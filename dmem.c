@@ -258,7 +258,7 @@ static struct dmem *parse_args(int argc,char **argv,
     
   if(!dopt->target_opt)
     {
-      fprintf(stdout,"You must sepcify target \n");
+      fprintf(stdout,"You must sepcify a target !\n");
       dmem_banner(*argv,-1);
     }
 
@@ -381,10 +381,10 @@ static void dump_raw(u_long *adds,u_long off)
       if(i != 0 &&  (i%4) == 0)
 	;//printf("\n");
       fprintf(stdout,"%02x%02x%02x%02x",
-	      WRITE_BYTE(adds[i],0),
-	      WRITE_BYTE(adds[i],8),
-	      WRITE_BYTE(adds[i],16),
-	      WRITE_BYTE(adds[i],24));
+	      WRITE_BYTE((int)adds[i],0),
+	      WRITE_BYTE((int)adds[i],8),
+	      WRITE_BYTE((int)adds[i],16),
+	      WRITE_BYTE((int)adds[i],24));
       
     }
   //  printf("\n");
@@ -417,15 +417,14 @@ static void dump_using_memory(u_long add,u_long *addr,u_long off)
       if(k%4==0)
 	{
 	  
-	  printf("0x%.08x:",vaddr);
+	  printf("0x%.08x:",(int)vaddr);
 	  vaddr +=0x10;
 	}
       fprintf(stdout," %02x %02x %02x %02x",
-	      
-	      WRITE_BYTE(addr[i],0),
-	      WRITE_BYTE(addr[i],8),
-	      WRITE_BYTE(addr[i],16),
-	      WRITE_BYTE(addr[i],24));
+	      WRITE_BYTE((int)addr[i],0),
+	      WRITE_BYTE((int)addr[i],8),
+	      WRITE_BYTE((int)addr[i],16),
+	      WRITE_BYTE((int)addr[i],24));
       
       
       i++;
@@ -435,10 +434,10 @@ static void dump_using_memory(u_long add,u_long *addr,u_long off)
 	  for(;j<i;j++)
 	    {
 	      printf("%c%c%c%c",
-		     isprint(WRITE_BYTE(addr[j],0))?	WRITE_BYTE(addr[j],0) : '.',
-		     isprint(WRITE_BYTE(addr[j],8))?	WRITE_BYTE(addr[j],8) : '.',
-		     isprint(WRITE_BYTE(addr[j],16))?	WRITE_BYTE(addr[j],16) : '.',
-		     isprint(WRITE_BYTE(addr[j],24))?	WRITE_BYTE(addr[j],24) : '.'
+		     isprint(WRITE_BYTE((int)addr[j],0))?	WRITE_BYTE((int)addr[j],0) : '.',
+		     isprint(WRITE_BYTE((int)addr[j],8))?	WRITE_BYTE((int)addr[j],8) : '.',
+		     isprint(WRITE_BYTE((int)addr[j],16))?	WRITE_BYTE((int)addr[j],16) : '.',
+		     isprint(WRITE_BYTE((int)addr[j],24))?	WRITE_BYTE((int)addr[j],24) : '.'
 		     );
 	    }
 	  printf("\n");
