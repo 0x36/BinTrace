@@ -133,6 +133,7 @@ static long *fetch_data(long address ,u_long offset,pid_t pid)
 {
   u_long * data;
   int i,j;
+  long l;
   long addr = address;
   data = (u_long*)malloc((offset+4)/4);
   if(!data)
@@ -141,7 +142,7 @@ static long *fetch_data(long address ,u_long offset,pid_t pid)
       exit(1);
     }
   memset(data,0,sizeof(data));
-  long l;
+
   for(i=0,j=0;i<offset;i++,j++)
     {
       data[j] =trace_process(PTRACE_PEEKTEXT,pid,(void*)addr+4*i,NULL);
