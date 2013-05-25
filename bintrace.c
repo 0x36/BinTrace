@@ -13,6 +13,8 @@
 #include <sys/user.h>
 #include <sys/stat.h>
 #include <sys/ptrace.h>
+
+#include "utils.h"
 #include "proc.h"
 
 const struct option lo[]=
@@ -158,7 +160,7 @@ static struct btproc *parse_args(int argc,char **argv,
   if(opts->target_has_args)
     {
       //; fprintf(stdout,"%s\n",target_args);
-      parse_target_args(bt,target_args);
+      ;//parse_target_args(bt,target_args);
     }
   else
     {

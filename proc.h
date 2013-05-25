@@ -3,13 +3,7 @@
 #include <sys/types.h>
 #include <inttypes.h>
 
-#define ALLOC_ERR(x)	\
-  fprintf(stderr,"%s\n",x); \
-  return NULL;
-
-#define WRITE_BYTE(addr,bits) \
-  (addr >> bits) & 0xff
-
+#define MAX_EXEC_SIZE	128
 #define MEM_EXEC	1
 #define MEM_WRITE	2
 #define MEM_READ	4
@@ -32,7 +26,7 @@ struct procinfo
   u_char *pi_data;	/* full content */
   u_long pi_map[2];	/* holds start/end proc maps*/
   u_long pi_offset;
-  struct perms *p_perm;
+  struct perms *pi_perm;
 };
 
 struct btproc
@@ -40,11 +34,12 @@ struct btproc
   u_char *exec;
   struct procinfo *pi;
   char **proc_arguments;    /* used only if we want to execute a binary */
-  char** (*args_parser)(struct procinfo*);
+  void (*args_parser)(struct btproc*);
 };
 
 struct procinfo *pinfo_init();
 struct perms *get_mem_perms();
 struct btproc *bt_proc_init();
-int printfd(int fd,const char* fmt,...);
+void parse_target_args(struct btproc *);
+
 #endif /* H_PROC_H */

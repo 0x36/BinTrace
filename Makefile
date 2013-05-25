@@ -4,17 +4,17 @@ BIN=btrace
 SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
 DEP=MF.dep
-
+CFLAGS=-ggdb
 all: $(DEP) $(BIN)
 
 $(DEP):$(SRC)
 	$(CC) -MM $^ > $@
 
 $(BIN):$(OBJ)
-	$(CC)  -o $@ $^
+	$(CC)  -o $@ $^ $(CFLAGS)
 
 %.o:%.c
-	$(CC) -c $<
+	$(CC) -c $< $(CFLAGS)
 
 clean_obj:
 	rm -rf $(OBJ)
