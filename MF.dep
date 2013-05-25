@@ -1,0 +1,2 @@
+bintrace.o: bintrace.c proc.h
+proc.o: proc.c proc.h
