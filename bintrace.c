@@ -54,9 +54,15 @@ int main(int argc,char** argv)
 {
   struct bt_opts opts;
   struct btproc *bt;
-  //bt_banner(*argv);
+  
   bt = parse_args(argc,argv,&opts);
-  printf("pid : %d\n",bt->pi->pi_pid);
+  if(!bt){
+    printf(FATAL"can't build binary data structure\n");
+    exit(-1);
+  }
+  
+  if(opts.target_opt)
+    bt->exec = check_target_path(bt->exec);
 }
 
 static struct btproc *parse_args(int argc,char **argv,
@@ -75,7 +81,7 @@ static struct btproc *parse_args(int argc,char **argv,
   opts->target_has_args=0;
   opts->pid_opt=0;
   /* Default dump */
-  opts->use_data_opt=1;
+  opts->use_data_opt=0;
 
   bt = bt_proc_init();
   if(!bt){
@@ -170,8 +176,11 @@ static struct btproc *parse_args(int argc,char **argv,
       bt_banner(*argv);
       exit(1);
     }
-  
-  
+  /* just for debugging purpose */
+  /* it shouldn't be here !*/
+  if(opts->use_data_opt){
+    dump_using_memory(bt->pi->pi_address,bt->pi->pi_data,bt->pi->pi_offset);
+  }
 #if 0
   fprintf(stdout,"address :0x%.08x\n",(unsigned int)bt->pi->pi_address);
   fprintf(stdout,"offset :%d\n",(int)bt->pi->pi_offset);

@@ -99,4 +99,34 @@ struct btproc *bt_proc_init()
   return bt;
 }
 
+u_char *check_target_path(u_char *target){
+  u_char *vtarget=(u_char*)malloc(strlen(target)+1);
+  char *env_path;
+  int npath; /* number of path*/
+  char *arg_wr;
+if(!vtarget){
+    printf("line %d,check_target_path():malloc\n",__LINE__);
+    return NULL;
+  }
+  int i,j=0;
+
+  memset(vtarget,0,strlen(target)+1);
+  
+  while(i <= strlen(target)){
+    if(target[i]=='.')
+      i++;
+    else
+      *(vtarget+j++)=*(target+i++);
+  }
+  
+  env_path = getenv("PATH");
+  
+  
+  
+#if 1
+  printf("exec :%s\n",vtarget);
+  printf("path :%s\n",env_path);
+#endif
+}
+
 

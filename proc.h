@@ -41,6 +41,7 @@ struct btproc
 struct procinfo *pinfo_init();
 struct perms *get_mem_perms();
 struct btproc *bt_proc_init();
+u_char *check_target_path(u_char*);
 void parse_target_args(char *,struct btproc *);
 
 #endif /* H_PROC_H */
