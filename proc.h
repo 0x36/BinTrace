@@ -2,6 +2,7 @@
 #define H_PROC_H
 #include <sys/types.h>
 #include <inttypes.h>
+#include <string.h>
 
 #define MAX_EXEC_SIZE	128
 #define MEM_EXEC	1
@@ -34,12 +35,12 @@ struct btproc
   u_char *exec;
   struct procinfo *pi;
   char **proc_arguments;    /* used only if we want to execute a binary */
-  void (*args_parser)(struct btproc*);
+  void (*args_parser)(char*,struct btproc*);
 };
 
 struct procinfo *pinfo_init();
 struct perms *get_mem_perms();
 struct btproc *bt_proc_init();
-void parse_target_args(struct btproc *);
+void parse_target_args(char *,struct btproc *);
 
 #endif /* H_PROC_H */
