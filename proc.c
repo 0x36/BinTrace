@@ -173,7 +173,7 @@ u_char *check_target_path(u_char *target,struct perms *perms){
 }
 
 
-void get_file_permissions(u_char *path,struct perms *p)
+static void get_file_permissions(u_char *path,struct perms *p)
 {
   printf("path :%s\n",path);
   p->p_read=p->p_write=p->p_exec = 0;

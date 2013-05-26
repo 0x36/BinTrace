@@ -45,7 +45,7 @@ struct procinfo *pinfo_init();
 struct perms *get_mem_perms();
 struct btproc *bt_proc_init();
 u_char *check_target_path(u_char*,struct perms*);
-void get_file_permissions(u_char*,struct perms*);
+static void get_file_permissions(u_char*,struct perms*);
 void parse_target_args(char *,struct btproc *);
 
 void bt_proc_destroy(struct btproc*);
