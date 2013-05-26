@@ -17,9 +17,9 @@
 #include "utils.h"
 #include "proc.h"
 
-#define	 __BT_VERSION__	"0.1"
-#define	__AUTHOR__	"Mohammed Ghannam"
-#define __LICENSE__	"GPL3"
+#define	 __VERSION	"0.1"
+#define	__AUTHOR	"Mohammed Ghannam"
+#define __LICENSE	"GPL3"
 
 const struct option lo[]=
   {
@@ -54,7 +54,8 @@ int main(int argc,char** argv)
 {
   struct bt_opts opts;
   struct btproc *bt;
-  
+  struct perms perms;
+
   bt = parse_args(argc,argv,&opts);
   if(!bt){
     printf(FATAL"can't build binary data structure\n");
@@ -62,7 +63,7 @@ int main(int argc,char** argv)
   }
   
   if(opts.target_opt)
-    bt->exec = check_target_path(bt->exec);
+    bt->exec = check_target_path(bt->exec,&perms);
 }
 
 static struct btproc *parse_args(int argc,char **argv,
@@ -201,8 +202,8 @@ return bt;
 static void bt_banner(char *argv)
 {
   fprintf(stdout,BLUE"+---------------------------------------------------------------------+\n"NORM);
-  fprintf(stdout,"bintrace tracking a runtime process in RAM   v%s \n",__BT_VERSION__);
-  fprintf(stdout,"Written By %s\n",__AUTHOR__);
+  fprintf(stdout,"bintrace tracking a runtime process in RAM   v%s \n",__VERSION);
+  fprintf(stdout,"Written By %s\n",__AUTHOR);
   fprintf(stdout,
 	  "-a   --force-addr  <memory_addr> \t memory address\n"
 	  "-A   --args        [bianry args] \t target arguments (optional)\n"

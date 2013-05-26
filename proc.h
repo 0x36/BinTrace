@@ -1,5 +1,6 @@
 #if !defined H_PROC_H
 #define H_PROC_H
+
 #include <sys/types.h>
 #include <inttypes.h>
 #include <string.h>
@@ -15,7 +16,9 @@ struct perms
   u_short p_read:1;
   u_short p_write:1;
   u_short p_exec:1;
-  u_char *symb;
+  u_short p_exist:1;
+  u_char *p_full_path;
+  u_char *p_symb;
 };
 
 /* all process infos */
@@ -41,7 +44,9 @@ struct btproc
 struct procinfo *pinfo_init();
 struct perms *get_mem_perms();
 struct btproc *bt_proc_init();
-u_char *check_target_path(u_char*);
+u_char *check_target_path(u_char*,struct perms*);
+void get_file_permissions(u_char*,struct perms*);
 void parse_target_args(char *,struct btproc *);
 
+void bt_proc_destroy(struct btproc*);
 #endif /* H_PROC_H */
