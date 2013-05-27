@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <stdarg.h>
+
 #include "utils.h"
+
+#define BT_MAX_DATA_LEN		512
 
 void *xmalloc(int bytes)
 {
@@ -15,7 +19,17 @@ void *xmalloc(int bytes)
   memset(tmp,0,bytes);
   return tmp;
 }
-int printfd(int fd,const char* fmt,...){}
+int printfd(int fd,const char* fmt,...)
+{
+  
+  char data[BT_MAX_DATA_LEN];
+  int len;
+  va_list ap;
+  va_start(ap,fmt);
+  len = vsnprintf(data,BT_MAX_DATA_LEN,fmt,ap);
+  va_end(ap);
+  write(fd,data,len);
+}
 
 void dump_using_memory(u_long add,u_char *addr,u_long off)
 {

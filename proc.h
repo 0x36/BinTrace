@@ -29,6 +29,7 @@ struct procinfo
   u_long pi_address;
   u_char *pi_data;	/* full content */
   u_long pi_map[2];	/* holds start/end proc maps*/
+  u_long pi_saved_offset;
   u_long pi_offset;
   struct perms *pi_perm;
 };
@@ -47,6 +48,9 @@ struct btproc *bt_proc_init();
 u_char *check_target_path(u_char*,struct perms*);
 static void get_file_permissions(u_char*,struct perms*);
 void parse_target_args(char *,struct btproc *);
-
 void bt_proc_destroy(struct btproc*);
+void pinfo_destroy(struct procinfo *);
+void exec_target(struct btproc *);
+void attach_target(struct btproc*);
+unsigned char *fetch_data(struct procinfo *);
 #endif /* H_PROC_H */
