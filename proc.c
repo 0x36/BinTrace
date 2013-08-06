@@ -46,6 +46,10 @@ void parse_target_args(char* arg,struct btproc *bt)
   char *dup_args = strdup(arg);
   num_args=0;
   arg_wr = strtok(dup_args,",");
+
+  /* this loop is done for checking how many args are passed
+   * lazy idea but it works fine 
+   */
   while(arg_wr)
     {
       arg_wr = strtok(NULL,",");
@@ -54,6 +58,8 @@ void parse_target_args(char* arg,struct btproc *bt)
   
   
   bt->proc_arguments = (char**)xmalloc(num_args+2);
+  //memset(bt->proc_arguments,0,sizeof(*bt->proc_arguments));
+  
   if(!bt->proc_arguments)
     {
       printf("line : %d,parse_target_args() : error allocation\n",__LINE__);
@@ -64,6 +70,7 @@ void parse_target_args(char* arg,struct btproc *bt)
     {
       printf("line : %d,parse_target_args() : error allocation\n",__LINE__);
     }
+  memset(*(bt)->proc_arguments,0,strlen(bt->exec)+1);
   bt->proc_arguments[0] = strdup(bt->exec);
 
 
@@ -74,23 +81,24 @@ void parse_target_args(char* arg,struct btproc *bt)
     {
       
       len = strlen(arg_wr);
-      bt->proc_arguments[i]=(char*)xmalloc(len);
+      bt->proc_arguments[i]=(char*)xmalloc(len+1);
       if(!bt->proc_arguments[i])
 	{
 	  printf("file : %s ,line : %d,parse_target_args() : error allocation\n",__FILE__,__LINE__);	  
 	}
+      memset(bt->proc_arguments[i],0,len+1);
       bt->proc_arguments[i]=strdup(arg_wr);
-      
+
       arg_wr = strtok(NULL,",");
       
       i++;
     }
-  
+  bt->proc_arguments[i]=NULL;
   
 
 #if 0
   for(i=0;bt->proc_arguments[i];i++)
-    printf("%s\n",bt->proc_arguments[i]);
+    printf(DEBUG"%s\n",bt->proc_arguments[i]);
 #endif
 
 }
@@ -285,7 +293,7 @@ void exec_target(struct btproc *bt)
       wait(NULL);
       /* set pid in process info structure */
       pi->pi_pid = pid;
-         
+      
       printfd(STDOUT_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
 	  pi->pi_map[0],pi->pi_map[1]);
       
@@ -313,7 +321,8 @@ unsigned char *fetch_data(struct procinfo *pi)
   data = (unsigned char*)xmalloc(pi->pi_offset);
   /* fetching data as 4 bytes per loop */
   fetched =(long*)xmalloc((pi->pi_offset+4)/4);
-  
+  pi->pi_map[0] = pi->pi_address;
+
   memset(data,0,pi->pi_offset);
   //  memset(fetch_data,0,((pi->pi_offset+4)/4));
   
@@ -339,7 +348,7 @@ unsigned char *fetch_data(struct procinfo *pi)
   
   for(k=0,i=0;k<pi->pi_saved_offset;k++,i+=4)
     {
-      printf("%x\n",fetched[k]);
+      printf("%x\n",(int)fetched[k]);
       data[i]=(fetched[k] >> 0) & 0xff;
       data[i+1]=(fetched[k] >> 8) & 0xff;
       data[i+2]=(fetched[k] >> 16) & 0xff;

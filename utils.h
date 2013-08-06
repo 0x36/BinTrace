@@ -11,6 +11,8 @@
 #define WARN	GREEN"[-] "NORM
 #define FATAL	RED"[x] "NORM
 #define DO	BLUE"[+] "NORM
+#define DEBUG	RED"[~] Debug:"NORM
+
 #define ALLOC_ERR(x)	\
   fprintf(stderr,"Line : %d , %s\n",__LINE__,x);	\
   return NULL;

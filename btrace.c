@@ -56,6 +56,7 @@ int main(int argc,char **argv)
 
   if (opts.target_opt && opts.pid_opt)
     {
+      bt_proc_destroy(bt_proc);
       printfd(2,FATAL" You can't choose target and pid together !\n");
       btrace_banner(*argv,1);
     }else
@@ -64,10 +65,27 @@ int main(int argc,char **argv)
       if(opts.target_opt)
 	{
 	  bt_proc->exec = check_target_path(bt_proc->pi->pi_target,&target_perms);
+	  
 	  if(!bt_proc->exec)
 	    btrace_banner(*argv,1);
+	  
 	  if(opts.target_has_args)
 	    bt_proc->args_parser(bt_proc->pi->pi_args,bt_proc);
+	  
+	  if((!opts.force_addr_opt && opts.off_opt) ||
+	     (opts.force_addr_opt && !opts.off_opt))
+	    {
+	      printfd(STDERR_FILENO,WARN"You may choose both of address and offset !\n");
+	      bt_proc_destroy(bt_proc);
+	      btrace_banner(*argv,1);
+	    }
+	  else
+	    {
+	      bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
+	      bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
+	    }
+	  
+	  exec_target(bt_proc);
 	}
       
     }
