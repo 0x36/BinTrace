@@ -43,6 +43,7 @@ struct bt_opts
 
 };
 
+
 static struct btproc *parse_args(int,char**,struct bt_opts *);
 static void btrace_banner(char *,int );
 
@@ -61,7 +62,7 @@ int main(int argc,char **argv)
       btrace_banner(*argv,1);
     }else
     {
-      /*using target executable*/
+      /* using target executable */
       if(opts.target_opt)
 	{
 	  bt_proc->exec = check_target_path(bt_proc->pi->pi_target,&target_perms);
@@ -71,6 +72,9 @@ int main(int argc,char **argv)
 	  
 	  if(opts.target_has_args)
 	    bt_proc->args_parser(bt_proc->pi->pi_args,bt_proc);
+	  else
+	    bt_proc->proc_arguments[0] = strdup(bt_proc->exec);
+	      
 	  
 	  if((!opts.force_addr_opt && opts.off_opt) ||
 	     (opts.force_addr_opt && !opts.off_opt))
@@ -85,10 +89,11 @@ int main(int argc,char **argv)
 	      bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
 	    }
 	  
+	  
 	  exec_target(bt_proc);
 	}
       
-    }
+    }/* end of using executable target */
     
 }
 
@@ -144,7 +149,7 @@ static struct btproc *parse_args(int argc,char **argv,struct bt_opts *opts)
 	  break;
 	case 'o':
 	  pi->pi_offset = strtol(optarg,NULL,10);
-	  opts->off_opt|1;
+	  opts->off_opt|=1;
 	  break;
 	case 'd':
 	  opts->use_data_opt |=1;

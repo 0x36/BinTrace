@@ -30,7 +30,7 @@ int printfd(int fd,const char* fmt,...)
   va_end(ap);
   write(fd,data,len);
 }
-
+/*
 void dump_using_memory(u_long add,u_char *addr,u_long off)
 {
 
@@ -46,15 +46,20 @@ void dump_using_memory(u_long add,u_char *addr,u_long off)
 	  vaddr +=0x10;
 	}
       
-      fprintf(stdout," %02x %02x %02x %02x",
-	      
-		addr[i],
-		addr[i+1],
-		addr[i+2],
-		addr[i+3]);
-
+      //fprintf(stdout," %02x %02x %02x %02x",
+      //addr[i],
+      //	      addr[i+1],
+      //	      addr[i+2],
+      //addr[i+3]);
+     
     }
   printf("\n");
+}
+*/
+void die(const char *msg)
+{
+  perror(msg);
+  exit(1);
 }
   /*    
   for(i=0,k=0,mv=0;i<off;k++,mv+=0x10)

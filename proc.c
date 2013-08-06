@@ -56,7 +56,10 @@ void parse_target_args(char* arg,struct btproc *bt)
       num_args++;
     }
   
-  
+  for(i=0;bt->proc_arguments[i];i++)
+    free(bt->proc_arguments[i]);
+  free(bt->proc_arguments);
+
   bt->proc_arguments = (char**)xmalloc(num_args+2);
   //memset(bt->proc_arguments,0,sizeof(*bt->proc_arguments));
   
@@ -64,7 +67,8 @@ void parse_target_args(char* arg,struct btproc *bt)
     {
       printf("line : %d,parse_target_args() : error allocation\n",__LINE__);
     }
-	  
+  
+  
   bt->proc_arguments[0] = (char*)malloc(strlen(bt->exec)+1);
   if(!bt->proc_arguments[0])
     {
@@ -111,7 +115,17 @@ struct btproc *bt_proc_init()
     return NULL;
   bt->pi = (struct procinfo *)xmalloc(sizeof(struct procinfo));
   //bt->exec = (char*)malloc(MAX_EXEC_SIZE);
-  bt->proc_arguments = NULL;
+  
+  
+  bt->proc_arguments = (char**)xmalloc(2);
+  //memset(bt->proc_arguments,0,sizeof(*bt->proc_arguments));
+  
+  if(!bt->proc_arguments)
+    {
+      printf(FATAL"line : %d,parse_target_args() : error allocation\n",__LINE__);
+      die("Error");
+    }
+  
   bt->args_parser = parse_target_args;
   
   return bt;
@@ -302,8 +316,8 @@ void exec_target(struct btproc *bt)
  
 #if 0
   int i;
-  printfd(STDOUT_FILENO, "target : %s\n",bt->exec);
-  printfd(STDOUT_FILENO, "[-] mapping area :"RED"0x%.08x-0x%.08x\n"NORM,
+  printfd(STDOUT_FILENO, DEBUG"target : %s\n",bt->exec);
+  printfd(STDOUT_FILENO, DEBUG"[-] mapping area :"RED"0x%.08x-0x%.08x\n"NORM,
 	  pi->pi_map[0],pi->pi_map[1]);
   
   
@@ -348,16 +362,33 @@ unsigned char *fetch_data(struct procinfo *pi)
   
   for(k=0,i=0;k<pi->pi_saved_offset;k++,i+=4)
     {
-      printf("%x\n",(int)fetched[k]);
+#if 0
+      printf(DEBUG"%.08x\n",(int)fetched[k]);
+#endif
       data[i]=(fetched[k] >> 0) & 0xff;
       data[i+1]=(fetched[k] >> 8) & 0xff;
       data[i+2]=(fetched[k] >> 16) & 0xff;
       data[i+3]=(fetched[k] >> 24) & 0xff;
     }
+  
 #if 1
   
   for(k=0;k<pi->pi_saved_offset;k++)
-    printf("%02x ",data[k]);
+    {
+
+      printf("%02x ",data[k]);
+      if(k%16==0 && k>0)
+	{
+
+	  printf("%2s","|");
+	  printf("\n");
+	}
+      if(k%8==0)
+	printf(" ");
+      
+
+    }
   printf("\n");
 #endif
+  return data;
 }
