@@ -26,7 +26,8 @@ struct procinfo
 {
   pid_t pi_pid;
   u_char *pi_target;
-  u_long pi_address;
+  u_char *pi_args;
+  u_long pi_address;	/* used for --address */
   u_char *pi_data;	/* full content */
   u_long pi_map[2];	/* holds start/end proc maps*/
   u_long pi_saved_offset;

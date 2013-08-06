@@ -165,7 +165,7 @@ u_char *check_target_path(u_char *target,struct perms *perms){
 	  free(full_path);
 	}
       if(!found){
-	printf("%s not found !\n",vtarget);
+	printf(FATAL""RED"%s "NORM":not found !\n",vtarget);
 	return NULL;
       }
 	
@@ -201,9 +201,9 @@ static void get_file_permissions(u_char *path,struct perms *p)
   (p->p_exec)?strcat(p->p_symb,"x"):strcat(p->p_symb,"-");
 
 #if 0
- printf("read :%d , write :%d , exec :%d\n",
+  printf("read :"GREEN"%d"NORM" , write :"GREEN"%d"NORM" , exec :"GREEN"%d"NORM"\n",
 	 p->p_read,p->p_write,p->p_exec);
-  printf("symbols :%s\n",p->p_symb);
+  printf("symbols :"GREEN"%s"NORM"\n",p->p_symb);
 #endif
 }
 
@@ -251,7 +251,7 @@ void exec_target(struct btproc *bt)
 
   pi = bt->pi;
   if(!pi){
-    printfd(STDERR_FILENO,"line : %d,exec_target():malloc \n",__LINE__);
+    printfd(STDERR_FILENO,FATAL"line : %d,exec_target():malloc \n",__LINE__);
     bt_proc_destroy(bt);
     exit(1);
   }
