@@ -327,7 +327,7 @@ void exec_target(struct btproc *bt)
 unsigned char *fetch_data(struct procinfo *pi)
 {
   int i,j,k,l;
-  
+  unsigned long  counter;
   unsigned char *data;
   long *fetched;
   int mod;
@@ -372,21 +372,29 @@ unsigned char *fetch_data(struct procinfo *pi)
     }
   
 #if 1
-  
+  counter =pi->pi_map[0];
   for(k=0;k<pi->pi_saved_offset;k++)
     {
-
-      printf("%02x ",data[k]);
-      if(k%16==0 && k>0)
+      if (k == 0)
 	{
-
+	  printf(GREEN"%.08x"NORM" : ",counter);
+	  counter+=16;
+	}
+      if(k%16==0 && k!=0)
+	{
+	  
 	  printf("%2s","|");
 	  printf("\n");
+	  printf(GREEN"%.08x "NORM": ",counter);
+	  counter+=16;
 	}
-      if(k%8==0)
+      if(k%8==0 )
 	printf(" ");
       
+      printf("%02x ",data[k]);
+      
 
+      
     }
   printf("\n");
 #endif
