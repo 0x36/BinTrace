@@ -91,6 +91,8 @@ int main(int argc,char **argv)
 	  
 	  
 	  exec_target(bt_proc);
+	  
+	  //dump_using_memory(bt_proc);
 	}
       
     }/* end of using executable target */

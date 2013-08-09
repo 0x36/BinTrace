@@ -1,6 +1,7 @@
 #if !defined H_UTILS_H
 #define H_UTILS_H
 
+
 /* leet color codes */
 #define BLUE    "\033[94m"
 #define RED     "\033[91m"
@@ -29,6 +30,6 @@
 
 int printfd(int fd,const char* fmt,...);
 void *xmalloc(int);
-void dump_using_memory(u_long ,u_char*,u_long);
+//void dump_using_memory(struct procinfo *);
 void die(const char *);
 #endif /* H_UTILS_H */

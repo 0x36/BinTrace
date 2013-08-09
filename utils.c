@@ -3,8 +3,10 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include "utils.h"
+#include "proc.h"
 
 #define BT_MAX_DATA_LEN		512
 
@@ -30,45 +32,53 @@ int printfd(int fd,const char* fmt,...)
   va_end(ap);
   write(fd,data,len);
 }
-/*
-void dump_using_memory(u_long add,u_char *addr,u_long off)
-{
 
-  
-  int i,j,l=0,k=0,mv;
-  u_long vaddr = add;
-  
-  for(i=0,k=0,mv=0;i<=(off/4);k++,mv+=0x10,i+=4)
+
+void dump_using_memory(struct procinfo* pi)
+{
+  int i,j,k,l;
+  unsigned long  counter;
+  unsigned char *data;
+  long *fetched;
+  int mod;
+
+    
+   
+  counter =pi->pi_map[0];
+  for(k=0;k<pi->pi_saved_offset;k++)
     {
-      if(k%4==0)
+      if (k == 0)
 	{
-	  printf("0x%.08x:",(unsigned int)vaddr);
-	  vaddr +=0x10;
+	  printf(GREEN"%.08x"NORM" : ",(int)counter);
+	  counter+=16;
 	}
+      if(k%16==0 && k!=0)
+	{
+	  
+	  printf("%2s","|");
+	  printf("\n");
+	  printf(GREEN"%.08x "NORM": ",(int)counter);
+	  counter+=16;
+	}
+      if(k%8==0 )
+	printf(" ");
       
-      //fprintf(stdout," %02x %02x %02x %02x",
-      //addr[i],
-      //	      addr[i+1],
-      //	      addr[i+2],
-      //addr[i+3]);
-     
+      printf("%02x ",pi->pi_data[k]);
+      
+
+      
     }
   printf("\n");
-}
-*/
+
+}  
+
 void die(const char *msg)
 {
   perror(msg);
-  exit(1);
+  exit(errno);
 }
-  /*    
-  for(i=0,k=0,mv=0;i<off;k++,mv+=0x10)
-    {
-
-      if(k%4==0)
-	{
-	  
-	  printf("0x%.08x:",vaddr);
+/* 
+printf("0x%.08x:",vaddr);
 	  vaddr +=0x10;
 	}
       fprintf(stdout," %02x %02x %02x %02x",
