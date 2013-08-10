@@ -250,6 +250,15 @@ void pinfo_destroy(struct procinfo *pi)
   
 }
 
+static void catch_child_proc(int sig)
+{
+  pid_t target_pid;
+  int status;
+  
+  while( (target_pid = waitpid(-1,&status,WNOHANG))>0);
+  
+}
+
 /* main function : it handles all process execution */
 void exec_target(struct btproc *bt)
 {
@@ -257,7 +266,20 @@ void exec_target(struct btproc *bt)
   struct procinfo *pi;
   long ret;
   int l;
+  struct sigaction act;
+  sigset_t blokcMask,emptyMask;
 
+  memset(&act,0,sizeof(act));
+  act.sa_handler = catch_child_proc;
+  act.sa_flags = 0;
+  sigemptyset(&act.sa_mask);
+
+
+  if(sigaction(SIGCHLD,&act,NULL)==-1)
+    {
+      printfd(STDERR_FILENO,FATAL"sigaction : %s\n",strerror(errno));
+      exit(1);
+    }
   pi = bt->pi;
   pid = fork();
   
@@ -288,7 +310,6 @@ void exec_target(struct btproc *bt)
     }
   else
     {
-
       wait(NULL);
       /* set pid in process info structure */
       pi->pi_pid = pid;
@@ -297,6 +318,7 @@ void exec_target(struct btproc *bt)
           pi->pi_map[0],pi->pi_map[1]-4);
       
       pi->pi_data = fetch_data(pi);
+      
     }
  
 #if 0
