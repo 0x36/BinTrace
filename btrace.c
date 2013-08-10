@@ -1,5 +1,6 @@
 /* Mohammed Ghannam 0x36 */
 /* bla bla */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,7 +52,6 @@ int main(int argc,char **argv)
 {
   struct bt_opts opts;
   struct btproc *bt_proc;
-  struct perms target_perms;
   
   bt_proc = parse_args(argc,argv,&opts);
 
@@ -65,21 +65,18 @@ int main(int argc,char **argv)
       /* using target executable */
       if(opts.target_opt)
 	{
-	  bt_proc->exec = check_target_path(bt_proc->pi->pi_target,&target_perms);
+	  bt_proc->exec = check_target_path(bt_proc->pi->pi_target,bt_proc->pi->pi_perm);
 	  
 	  if(!bt_proc->exec)
-	    btrace_banner(*argv,1);
-	  
-	  if(opts.target_has_args){
-	    printf("pi_args : %s\n",bt_proc->pi->pi_args);
-	    bt_proc->args_parser(bt_proc->pi->pi_args,bt_proc);
-	  }
-	  else
 	    {
-	      bt_proc->proc_arguments[0] = strdup(bt_proc->exec);
-	      //printf("exec : %s\n",bt_proc->proc_arguments[0]);
-	      ;
+	      bt_proc_destroy(bt_proc);
+	      btrace_banner(*argv,1);
 	    }
+	  if(opts.target_has_args)
+	    bt_proc->args_parser(bt_proc->pi->pi_args,bt_proc);
+	  
+	  else
+	    bt_proc->proc_arguments[0] = strdup(bt_proc->exec);
 	  
 	  if((!opts.force_addr_opt && opts.off_opt) ||
 	     (opts.force_addr_opt && !opts.off_opt))
@@ -93,17 +90,16 @@ int main(int argc,char **argv)
 	      bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
 	      bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
 	    }
-	  
-	  
+	  	  
 	  exec_target(bt_proc);
+	  dump_using_memory(bt_proc->pi);
+	  pinfo_destroy(bt_proc->pi);
 	  
-	  //dump_using_memory(bt_proc);
 	}
       
     }/* end of using executable target */
-    
+  
 }
-
 
 static struct btproc *parse_args(int argc,char **argv,struct bt_opts *opts)
 {
@@ -121,6 +117,7 @@ static struct btproc *parse_args(int argc,char **argv,struct bt_opts *opts)
   opts->raw_opt  =0;
   opts->target_opt=0;
   opts->target_has_args=0;
+
   /* Default dump */
   opts->use_data_opt=1;
   opts->off_opt=0;
@@ -165,6 +162,7 @@ static struct btproc *parse_args(int argc,char **argv,struct bt_opts *opts)
 	  btrace_banner(*argv,-1);
 	}
     }
+  
   return bt;
 }
 

@@ -21,19 +21,22 @@
 struct procinfo *pinfo_init()
 {
   struct procinfo *pi;
-  pi = xmalloc(sizeof(struct procinfo));
+  pi = (struct procinfo *)xmalloc(sizeof(struct procinfo));
   pi->pi_pid=0;
   pi->pi_target = NULL ;        /* we'll reserve a space for
                                  * this later ! */
   pi->pi_address = 0;
-  //pi->pi_data = NULL;           /* we'll figure it out later */
+  pi->pi_data = NULL;           /* we'll figure it out later */
   pi->pi_map[0]=pi->pi_map[1]=0;
   pi->pi_offset =0;
+  
   pi->pi_perm = (struct perms *)xmalloc(sizeof(struct perms));
+  
   /* initialise permission with NULL values */
   pi->pi_perm->p_read = 0;
   pi->pi_perm->p_write= 0;
   pi->pi_perm->p_exec = 0;
+  pi->pi_perm->p_symb = (char*)malloc(4*sizeof(char));
 
   return pi;
 }
@@ -43,7 +46,7 @@ void parse_target_args(char* arg,struct btproc *bt)
   int len;
   int num_args;
   int i;
-  char *dup_args = strdup(arg);
+  char *dup_args = arg;
   num_args=0;
   arg_wr = strtok(dup_args,",");
 
@@ -67,14 +70,6 @@ void parse_target_args(char* arg,struct btproc *bt)
     {
       printf("line : %d,parse_target_args() : error allocation\n",__LINE__);
     }
-  
-  
-  bt->proc_arguments[0] = (char*)malloc(strlen(bt->exec)+1);
-  if(!bt->proc_arguments[0])
-    {
-      printf("line : %d,parse_target_args() : error allocation\n",__LINE__);
-    }
-  memset(*(bt)->proc_arguments,0,strlen(bt->exec)+1);
   bt->proc_arguments[0] = strdup(bt->exec);
 
 
@@ -85,16 +80,8 @@ void parse_target_args(char* arg,struct btproc *bt)
     {
       
       len = strlen(arg_wr);
-      bt->proc_arguments[i]=(char*)xmalloc(len+1);
-      if(!bt->proc_arguments[i])
-        {
-          printf("file : %s ,line : %d,parse_target_args() : error allocation\n",__FILE__,__LINE__);      
-        }
-      memset(bt->proc_arguments[i],0,len+1);
       bt->proc_arguments[i]=strdup(arg_wr);
-
       arg_wr = strtok(NULL,",");
-      
       i++;
     }
   bt->proc_arguments[i]=NULL;
@@ -113,13 +100,14 @@ struct btproc *bt_proc_init()
   bt = (struct btproc *)xmalloc(sizeof(struct btproc));
   if(!bt)
     return NULL;
-  bt->pi = (struct procinfo *)xmalloc(sizeof(struct procinfo));
+  //bt->pi = (struct procinfo *)xmalloc(sizeof(struct procinfo));
   //bt->exec = (char*)malloc(MAX_EXEC_SIZE);
   
+  bt->pi = pinfo_init();
   
   bt->proc_arguments = (char**)xmalloc(2*sizeof(char*));
   bt->proc_arguments[0]=NULL;
-  bt->proc_arguments[1]=NULL;
+  
   
   if(!bt->proc_arguments)
     {
@@ -142,7 +130,7 @@ u_char *check_target_path(u_char *target,struct perms *perms){
   int len;              /* len of dir */
   int i,j,k=0;
 
-  vtarget=strdup(target);
+  vtarget=target;
 
   if(!access(target,F_OK)){
     get_file_permissions(target , perms);
@@ -218,7 +206,7 @@ static void get_file_permissions(u_char *path,struct perms *p)
     p->p_exec|=1;
   
   /*set symbols */
-  p->p_symb = xmalloc(4);
+  memset(p->p_symb,0,4);
   (p->p_read)?strcat(p->p_symb,"r"):strcat(p->p_symb,"-");
   p->p_write?strcat(p->p_symb,"w"):strcat(p->p_symb,"-");
   (p->p_exec)?strcat(p->p_symb,"x"):strcat(p->p_symb,"-");
@@ -237,12 +225,10 @@ void bt_proc_destroy(struct btproc* bt)
 
   if(bt->exec)
     free(bt->exec);
-
-  if(bt->pi)
-     pinfo_destroy(bt->pi);
-
+  
   for(i=0;*(bt->proc_arguments+i);i++)
     free(*(bt->proc_arguments+i));
+  bt->args_parser = NULL;
 }
 
 void pinfo_destroy(struct procinfo *pi)
@@ -273,12 +259,6 @@ void exec_target(struct btproc *bt)
   int l;
 
   pi = bt->pi;
-  if(!pi){
-    printfd(STDERR_FILENO,FATAL"line : %d,exec_target():malloc \n",__LINE__);
-    bt_proc_destroy(bt);
-    exit(1);
-  }
-
   pid = fork();
   
   /* child */
@@ -320,8 +300,6 @@ void exec_target(struct btproc *bt)
   printfd(STDOUT_FILENO, DEBUG"target : %s\n",bt->exec);
   printfd(STDOUT_FILENO, DEBUG"[-] mapping area :"RED"0x%.08x-0x%.08x\n"NORM,
           pi->pi_map[0],pi->pi_map[1]);
-  
-  
 #endif  
 }
 
@@ -334,50 +312,26 @@ unsigned char *fetch_data(struct procinfo *pi)
   int mod;
   
   data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
-  /* fetching data as 4 bytes per loop */
-  fetched =(long*)xmalloc((pi->pi_offset+4)*sizeof(long));
+  
+  
   pi->pi_map[0] = pi->pi_address;
 
   memset(data,0,pi->pi_offset+4);
-  //  memset(fetch_data,0,((pi->pi_offset+4)/4));
   
   while (pi->pi_offset%4)
     pi->pi_offset++;
-  
-  
-  //  printf("offset : %d \n",(int)pi->pi_offset);
-  for(i=0,j=0;i<((pi->pi_offset)/4);i++,j++)
+    
+  for(i=0;i<=pi->pi_offset;i++)
     {
-      fetched[j] = ptrace(PTRACE_PEEKTEXT,pi->pi_pid,
-                          (void*)pi->pi_address+4*i,NULL);
-      
-      if(!fetched[j] == -1){
-        printfd(STDERR_FILENO,FATAL"line : %d,can't PEEK TEXT the process :"RED"%s"NORM"\n",
-                __LINE__,strerror(errno));
-        
-        exit(1);
-      }
-        
+      data[i]= (char)ptrace(PTRACE_PEEKTEXT,pi->pi_pid,
+		      pi->pi_address+i,NULL);
     }
-
-  //  pi->pi_data = strdup(data);
-      
-    /* we are in little endian */
-  pi->pi_saved_offset = pi->pi_map[1] - pi->pi_map[0];
   
-  for(k=0,i=0;k<pi->pi_saved_offset;k++,i+=4)
-    {
-#if 0
-      printf(DEBUG"%.08x\n",(int)fetched[k]);
-#endif
-      data[i]=(unsigned char)((fetched[k] >> 0) & 0xff);
-      data[i+1]=(fetched[k] >> 8) & 0xff;
-      data[i+2]=(fetched[k] >> 16) & 0xff;
-      data[i+3]=(fetched[k] >> 24) & 0xff;
-    }
-    pi->pi_data = strdup(data);
+    pi->pi_saved_offset = pi->pi_map[1] - pi->pi_map[0];
 
-  free(data);
-  free(fetched);
-  dump_using_memory(pi);
+    pi->pi_data = (unsigned char *)malloc(sizeof(unsigned char)*pi->pi_offset+1);
+    memset(pi->pi_data,0,pi->pi_offset+1);
+    memcpy(pi->pi_data,data,pi->pi_offset);
+    free(data);
+    return pi->pi_data;
 }
