@@ -1,5 +1,5 @@
 /* Mohammed Ghannam 0x36 */
-/* bla bla */
+
 
 #include <stdio.h>
 #include <stdlib.h>
