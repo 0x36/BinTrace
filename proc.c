@@ -311,7 +311,6 @@ unsigned char *fetch_data(struct procinfo *pi)
   unsigned char *data;
   long *fetched;
   int mod;
-<<<<<<< HEAD
   
   data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
   
@@ -322,16 +321,7 @@ unsigned char *fetch_data(struct procinfo *pi)
   
   //while (pi->pi_offset%4)
   //  pi->pi_offset++;
-=======
 
-  while (pi->pi_offset%4)
-    pi->pi_offset++;
-
-  data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
-
-  memset(data,0,pi->pi_offset+4);
-
->>>>>>> dev
     
   for(i=0;i<pi->pi_offset;i++)
     {
