@@ -90,48 +90,19 @@ void dump_using_memory(struct procinfo* pi)
     }
 
 }
-
-/*
-void dump_using_memory(struct procinfo* pi)
+void raw_dump(struct procinfo *pi)
 {
-  int i,j,k,l;
-  unsigned long  counter;
-  unsigned char *data;
-  long *fetched;
-  int mod;
-  char line[100];
-  memset(line,' ',100);
-
-  for(k=0;k<pi->pi_saved_offset;k++)
+  int left,written;
+  char *ptr;
+  ptr = pi->pi_data;
+  left = pi->pi_offset;
+  while(left >0)
     {
-      if (k == 0)
-	{
-	  
-	  printf(GREEN"%.08x"NORM" : ",(int)counter);
-	  counter+=16;
-	}
-      if(k%16==0 && k!=0)
-	{
-	  
-	  printf("%2s","|");
-	  printf("\n");
-	  printf(GREEN"%.08x "NORM": ",(int)counter);
-	  counter+=16;
-	}
-      if(k%8==0 )
-	printf(" ");
-      
-      printf("%02x ",pi->pi_data[k]);
-      
-      
-      
+      written = write(1,ptr,left);
+      left -=written; 
+      ptr+=written;
     }
-  printf("%45s","|a");
-  printf("\n");
-
-}  
-*/
-
+}
 void die(const char *msg)
 {
   perror(msg);

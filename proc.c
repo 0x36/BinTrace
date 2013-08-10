@@ -264,6 +264,9 @@ void exec_target(struct btproc *bt)
   /* child */
   if(pid == 0)
     {
+      close(0);
+      close(1);
+      close(2);
       /* tracing the child process */
       ret = ptrace(PTRACE_TRACEME,0,NULL,NULL);
       /* execting our target process */
@@ -285,11 +288,12 @@ void exec_target(struct btproc *bt)
     }
   else
     {
+
       wait(NULL);
       /* set pid in process info structure */
       pi->pi_pid = pid;
       
-      printfd(STDOUT_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
+      printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
           pi->pi_map[0],pi->pi_map[1]-4);
       
       pi->pi_data = fetch_data(pi);
