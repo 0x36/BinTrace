@@ -26,7 +26,7 @@ struct procinfo *pinfo_init()
   pi->pi_target = NULL ;        /* we'll reserve a space for
                                  * this later ! */
   pi->pi_address = 0;
-  pi->pi_data = NULL;           /* we'll figure it out later */
+  //pi->pi_data = NULL;           /* we'll figure it out later */
   pi->pi_map[0]=pi->pi_map[1]=0;
   pi->pi_offset =0;
   pi->pi_perm = (struct perms *)xmalloc(sizeof(struct perms));
@@ -60,7 +60,7 @@ void parse_target_args(char* arg,struct btproc *bt)
     free(bt->proc_arguments[i]);
   free(bt->proc_arguments);
 
-  bt->proc_arguments = (char**)xmalloc(num_args+2);
+  bt->proc_arguments = (char**)xmalloc((num_args+2)*sizeof(char*));
   //memset(bt->proc_arguments,0,sizeof(*bt->proc_arguments));
   
   if(!bt->proc_arguments)
@@ -117,8 +117,9 @@ struct btproc *bt_proc_init()
   //bt->exec = (char*)malloc(MAX_EXEC_SIZE);
   
   
-  bt->proc_arguments = (char**)xmalloc(2);
-  //memset(bt->proc_arguments,0,sizeof(*bt->proc_arguments));
+  bt->proc_arguments = (char**)xmalloc(2*sizeof(char*));
+  bt->proc_arguments[0]=NULL;
+  bt->proc_arguments[1]=NULL;
   
   if(!bt->proc_arguments)
     {
@@ -332,16 +333,17 @@ unsigned char *fetch_data(struct procinfo *pi)
   long *fetched;
   int mod;
   
-  data = (unsigned char*)xmalloc(pi->pi_offset+1);
+  data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
   /* fetching data as 4 bytes per loop */
-  fetched =(long*)xmalloc((pi->pi_offset+4)/4);
+  fetched =(long*)xmalloc((pi->pi_offset+4)*sizeof(long));
   pi->pi_map[0] = pi->pi_address;
 
-  memset(data,0,pi->pi_offset);
+  memset(data,0,pi->pi_offset+4);
   //  memset(fetch_data,0,((pi->pi_offset+4)/4));
   
   while (pi->pi_offset%4)
     pi->pi_offset++;
+  
   
   //  printf("offset : %d \n",(int)pi->pi_offset);
   for(i=0,j=0;i<((pi->pi_offset)/4);i++,j++)
@@ -358,7 +360,7 @@ unsigned char *fetch_data(struct procinfo *pi)
         
     }
 
-  pi->pi_data = strdup(data);
+  //  pi->pi_data = strdup(data);
       
     /* we are in little endian */
   pi->pi_saved_offset = pi->pi_map[1] - pi->pi_map[0];
@@ -368,11 +370,13 @@ unsigned char *fetch_data(struct procinfo *pi)
 #if 0
       printf(DEBUG"%.08x\n",(int)fetched[k]);
 #endif
-      data[i]=(fetched[k] >> 0) & 0xff;
+      data[i]=(unsigned char)((fetched[k] >> 0) & 0xff);
       data[i+1]=(fetched[k] >> 8) & 0xff;
       data[i+2]=(fetched[k] >> 16) & 0xff;
       data[i+3]=(fetched[k] >> 24) & 0xff;
     }
+    pi->pi_data = strdup(data);
+
   free(data);
   free(fetched);
   dump_using_memory(pi);

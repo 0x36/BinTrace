@@ -10,7 +10,7 @@
 
 #define BT_MAX_DATA_LEN		512
 
-void *xmalloc(int bytes)
+void  *xmalloc(int bytes)
 {
   void *tmp = malloc(bytes);
   if(!tmp)
@@ -41,8 +41,6 @@ void dump_using_memory(struct procinfo* pi)
   unsigned char *data;
   long *fetched;
   int mod;
-
-    
    
   counter =pi->pi_map[0];
   for(k=0;k<pi->pi_saved_offset;k++)
@@ -106,6 +104,6 @@ printf("0x%.08x:",vaddr);
 	}
     }
   printf("\n");
-      */
+*/
   
 

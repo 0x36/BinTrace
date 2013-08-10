@@ -1,5 +1,5 @@
 /* Mohammed Ghannam 0x36 */
-
+/* bla bla */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,11 +70,16 @@ int main(int argc,char **argv)
 	  if(!bt_proc->exec)
 	    btrace_banner(*argv,1);
 	  
-	  if(opts.target_has_args)
+	  if(opts.target_has_args){
+	    printf("pi_args : %s\n",bt_proc->pi->pi_args);
 	    bt_proc->args_parser(bt_proc->pi->pi_args,bt_proc);
+	  }
 	  else
-	    bt_proc->proc_arguments[0] = strdup(bt_proc->exec);
-	      
+	    {
+	      bt_proc->proc_arguments[0] = strdup(bt_proc->exec);
+	      //printf("exec : %s\n",bt_proc->proc_arguments[0]);
+	      ;
+	    }
 	  
 	  if((!opts.force_addr_opt && opts.off_opt) ||
 	     (opts.force_addr_opt && !opts.off_opt))
