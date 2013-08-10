@@ -9,6 +9,9 @@
 #include "proc.h"
 
 #define BT_MAX_DATA_LEN		512
+#define HEX_OFFSET    1
+#define ASCII_OFFSET 51
+#define NUM_CHARS    16
 
 void  *xmalloc(int bytes)
 {
@@ -34,6 +37,57 @@ int printfd(int fd,const char* fmt,...)
 }
 
 
+char * ascii(char *position, int c)
+{
+  int i=0;
+  if (!isprint(c)) c='.';
+  sprintf(position, "%c", c);
+  return(++position);
+}
+ 
+char * hex(char *position, int c)
+{
+  int offset=3;
+ 
+  sprintf(position, "%02x ", (unsigned char) c);
+ 
+  *(position+offset)=' ';    
+  return (position+offset);
+}
+ 
+        
+void dump_using_memory(struct procinfo* pi)
+{
+  int c=' ';             
+  char * hex_offset;
+  int i,counter;
+  char * ascii_offset; 
+  char line[81];      
+  i=0;
+  
+  counter=pi->pi_map[0];
+  while (i < pi->pi_offset )
+    {
+      memset(line,0x20, 81);
+      hex_offset   = line+HEX_OFFSET;
+      ascii_offset = line+ASCII_OFFSET;
+      printf(GREEN"0x%.08x"NORM" : ",(int)counter);
+      counter+=16;
+      
+      while ( ascii_offset < line+ASCII_OFFSET+NUM_CHARS
+	      && i < pi->pi_offset )
+        {
+	  c=pi->pi_data[i++];
+	  hex_offset = hex(hex_offset, c);
+	  ascii_offset = ascii(ascii_offset, c);
+ 
+        }
+      printf("%s\n", line);
+    }
+
+}
+
+/*
 void dump_using_memory(struct procinfo* pi)
 {
   int i,j,k,l;
@@ -41,12 +95,14 @@ void dump_using_memory(struct procinfo* pi)
   unsigned char *data;
   long *fetched;
   int mod;
-   
-  counter =pi->pi_map[0];
+  char line[100];
+  memset(line,' ',100);
+
   for(k=0;k<pi->pi_saved_offset;k++)
     {
       if (k == 0)
 	{
+	  
 	  printf(GREEN"%.08x"NORM" : ",(int)counter);
 	  counter+=16;
 	}
@@ -63,47 +119,17 @@ void dump_using_memory(struct procinfo* pi)
       
       printf("%02x ",pi->pi_data[k]);
       
-
+      
       
     }
+  printf("%45s","|a");
   printf("\n");
 
 }  
+*/
 
 void die(const char *msg)
 {
   perror(msg);
   exit(errno);
 }
-/* 
-printf("0x%.08x:",vaddr);
-	  vaddr +=0x10;
-	}
-      fprintf(stdout," %02x %02x %02x %02x",
-	      
-	      WRITE_BYTE(addr[i],0),
-	      WRITE_BYTE(addr[i],8),
-	      WRITE_BYTE(addr[i],16),
-	      WRITE_BYTE(addr[i],24));
-      
-      
-      i++;
-      if(i != 0 &&  (i%4) == 0)
-	{
-	  printf("  ");
-	  for(;j<i;j++)
-	    {
-	      printf("%c%c%c%c",
-		     isprint(WRITE_BYTE(addr[j],0))?	WRITE_BYTE(addr[j],0) : '.',
-		     isprint(WRITE_BYTE(addr[j],8))?	WRITE_BYTE(addr[j],8) : '.',
-		     isprint(WRITE_BYTE(addr[j],16))?	WRITE_BYTE(addr[j],16) : '.',
-		     isprint(WRITE_BYTE(addr[j],24))?	WRITE_BYTE(addr[j],24) : '.'
-		     );
-	    }
-	  printf("\n");
-	}
-    }
-  printf("\n");
-*/
-  
-

@@ -313,22 +313,20 @@ unsigned char *fetch_data(struct procinfo *pi)
   
   data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
   
-  
+  pi->pi_saved_offset = pi->pi_offset;
   pi->pi_map[0] = pi->pi_address;
 
   memset(data,0,pi->pi_offset+4);
   
-  while (pi->pi_offset%4)
-    pi->pi_offset++;
+  //while (pi->pi_offset%4)
+  //  pi->pi_offset++;
     
   for(i=0;i<=pi->pi_offset;i++)
     {
       data[i]= (char)ptrace(PTRACE_PEEKTEXT,pi->pi_pid,
 		      pi->pi_address+i,NULL);
     }
-  
-    pi->pi_saved_offset = pi->pi_map[1] - pi->pi_map[0];
-
+      
     pi->pi_data = (unsigned char *)malloc(sizeof(unsigned char)*pi->pi_offset+1);
     memset(pi->pi_data,0,pi->pi_offset+1);
     memcpy(pi->pi_data,data,pi->pi_offset);
