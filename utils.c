@@ -37,30 +37,20 @@ int printfd(int fd,const char* fmt,...)
 }
 
 
-char * ascii(char *position, int c)
+static char * ascii(char *position, int c)
 {
   int i=0;
-  /* If the character is NOT printable
-   * replace it with a '.'  */
-
   
   if (!isprint(c)) c='.';
-  
-  sprintf(position, "%c", c);    /* Put the character to the line
-				  * so it can be displayed later */
- 
-  /* Return the position of the next
-   * ASCII character.   */
+    sprintf(position, "%c", c);
   return(++position);
 }
  
-char * hex(char *position, int c)
+static char * hex(char *position, int c)
 {
   int offset=3;
- 
-  sprintf(position, "%02X ", (unsigned char) c);
- 
-  *(position+offset)=' ';   /* Remove the '/0' created by 'sprint'  */
+   sprintf(position, "%02x ", (unsigned char) c);
+   *(position+offset)=' ';
  
   return (position+offset);
 }
@@ -68,17 +58,13 @@ char * hex(char *position, int c)
         
 void dump_using_memory(struct procinfo* pi)
 {
-  int c=' ';                    /* Character read from the file */
- 
-  char * hex_offset;     /* Position of the next character
-			  * in Hex     */
+  int c=' '; 
+  char * hex_offset;
   int i,counter;
-  char * ascii_offset;      /* Position of the next character
-			     * in ASCII.      */
+  char * ascii_offset; 
+  FILE *ptr;          
  
-  FILE *ptr;                       /* Pointer to the file.   */
- 
-  char line[81];        /* O/P line.      */
+  char line[81];      
   i=0;
   
   counter=pi->pi_map[0];
