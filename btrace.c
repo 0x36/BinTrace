@@ -1,6 +1,5 @@
 /* Mohammed Ghannam 0x36 */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,12 +91,16 @@ int main(int argc,char **argv)
 	    }
 	  	  
 	  exec_target(bt_proc);
-	  dump_using_memory(bt_proc->pi);
+	  if(opts.raw_opt)
+	    raw_dump(bt_proc->pi);
+	  else
+	    dump_using_memory(bt_proc->pi);
 	  pinfo_destroy(bt_proc->pi);
 	  
 	}
       
-    }/* end of using executable target */
+    }
+  return 0;
   
 }
 
