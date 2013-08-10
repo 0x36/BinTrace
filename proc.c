@@ -290,7 +290,7 @@ void exec_target(struct btproc *bt)
       pi->pi_pid = pid;
       
       printfd(STDOUT_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
-          pi->pi_map[0],pi->pi_map[1]);
+          pi->pi_map[0],pi->pi_map[1]-4);
       
       pi->pi_data = fetch_data(pi);
     }
@@ -305,11 +305,13 @@ void exec_target(struct btproc *bt)
 
 unsigned char *fetch_data(struct procinfo *pi)
 {
+  char swap[4]={0};
   int i,j,k,l;
   unsigned long  counter;
   unsigned char *data;
   long *fetched;
   int mod;
+<<<<<<< HEAD
   
   data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
   
@@ -320,16 +322,28 @@ unsigned char *fetch_data(struct procinfo *pi)
   
   //while (pi->pi_offset%4)
   //  pi->pi_offset++;
+=======
+
+  while (pi->pi_offset%4)
+    pi->pi_offset++;
+
+  data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
+
+  memset(data,0,pi->pi_offset+4);
+
+>>>>>>> dev
     
-  for(i=0;i<=pi->pi_offset;i++)
+  for(i=0;i<pi->pi_offset;i++)
     {
       data[i]= (char)ptrace(PTRACE_PEEKTEXT,pi->pi_pid,
 		      pi->pi_address+i,NULL);
     }
       
     pi->pi_data = (unsigned char *)malloc(sizeof(unsigned char)*pi->pi_offset+1);
+    
     memset(pi->pi_data,0,pi->pi_offset+1);
     memcpy(pi->pi_data,data,pi->pi_offset);
     free(data);
+    
     return pi->pi_data;
 }
