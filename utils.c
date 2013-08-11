@@ -40,57 +40,35 @@ int printfd(int fd,const char* fmt,...)
 static char * ascii(char *position, int c)
 {
   int i=0;
-<<<<<<< HEAD
-
-  if (!isprint(c)) c='.';
-  sprintf(position, "%c", c);
-
-=======
   
   if (!isprint(c)) c='.';
     sprintf(position, "%c", c);
->>>>>>> dev
   return(++position);
 }
  
 static char * hex(char *position, int c)
 {
   int offset=3;
-<<<<<<< HEAD
- 
-
-  sprintf(position, "%02x ", (unsigned char) c);
-=======
    sprintf(position, "%02x ", (unsigned char) c);
    *(position+offset)=' ';
->>>>>>> dev
  
-  *(position+offset)=' ';    
   return (position+offset);
 }
  
         
 void dump_using_memory(struct procinfo* pi)
 {
-<<<<<<< HEAD
-
-  int c=' ';             
-  char * hex_offset;
-  int i,counter;
-  char * ascii_offset; 
-=======
   int c=' '; 
   char * hex_offset;
   int i,counter;
   char * ascii_offset; 
   FILE *ptr;          
  
->>>>>>> dev
   char line[81];      
   i=0;
   
   counter=pi->pi_map[0];
-  while (i < pi->pi_offset )
+    while (i < pi->pi_offset )
     {
       memset(line,0x20, 81);
       hex_offset   = line+HEX_OFFSET;
