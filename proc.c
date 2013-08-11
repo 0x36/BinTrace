@@ -175,7 +175,7 @@ u_char *check_target_path(u_char *target,struct perms *perms){
       free(full_path);
       
     }
-  
+
 #if 0
   printf("full path %s\n",perms->p_full_path);  
   printf("exec :%s\n",vtarget);
@@ -392,7 +392,7 @@ int  read_procfs_maps(struct procinfo *pi)
   
   pi->pi_offset = pi->pi_map[1] - pi->pi_map[0];
 
-#if 1
+#if 0
   printfd(2,DEBUG"%s",buf);
   printfd(2,DEBUG" Base address : 0x%08x\n",pi->pi_map[0]);
   printfd(2,DEBUG" End address :  0x%08x\n",pi->pi_map[1]);
