@@ -90,6 +90,16 @@ int main(int argc,char **argv)
 	      bt_proc_destroy(bt_proc);
 	      btrace_banner(*argv,1);
 	    }
+	  
+	  /* If force address and offset are not set we read 
+	   * from profs and fetch memory base address 
+	   * and write new elf binary
+	   *
+	  else if (!opts.force_addr_opt && !opts.off_opt)
+	    {
+	      printfd(2,WARN"PID : %d\n",bt_proc->pi->pi_pid);
+	    }
+	  */
 	  else
 	    {
 	      bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
@@ -97,6 +107,20 @@ int main(int argc,char **argv)
 	    }
 	  	  
 	  exec_target(bt_proc);
+	  
+	  
+	  /* If force address and offset are not set we read 
+	   * from profs and fetch memory base address 
+	   * and write new elf binary
+	   */
+	  if (!opts.force_addr_opt && !opts.off_opt)
+	    {
+	      printfd(2,DO"Target :"GREEN" %s "NORM" PID : "GREEN"%d"NORM"\n",bt_proc->exec,bt_proc->pi->pi_pid);
+	      if(read_procfs_maps(bt_proc->pi) == -1)
+		die("no such process");
+	    }
+	  
+	  bt_proc->pi->pi_data = fetch_data(bt_proc->pi);
 	  if(opts.raw_opt)
 	    raw_dump(bt_proc->pi);
 	  else
@@ -104,8 +128,15 @@ int main(int argc,char **argv)
 
 	  pinfo_destroy(bt_proc->pi);
 	  bt_proc_destroy(bt_proc);
+	  
 	}
-      
+      /* pid attach */
+      if (opts.pid_opt)
+	{
+	  printf(DO"Attached Process ID : "GREEN"%d"NORM"\n",bt_proc->pi->pi_pid);
+	  if(read_procfs_maps(bt_proc->pi) == -1)
+	    die(FATAL"No such process");
+	}
     }
   return 0;
   

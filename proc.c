@@ -182,7 +182,7 @@ u_char *check_target_path(u_char *target,struct perms *perms){
   printf("path :%s\n",env_path);
   printf("number of dires  : %d\n",npath);
 #endif
-  free(path);
+  //free(path);
   free(vtarget);
   return perms->p_full_path;
 }
@@ -218,8 +218,8 @@ void bt_proc_destroy(struct btproc* bt)
 {
   int i;
 
-  if(bt->exec)
-    free(bt->exec);
+  //if(bt->exec)
+  //  free(bt->exec);
   
   for(i=0;*(bt->proc_arguments+i);i++)
     free(*(bt->proc_arguments+i));
@@ -310,10 +310,7 @@ void exec_target(struct btproc *bt)
       /* set pid in process info structure */
       pi->pi_pid = pid;
       
-      printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
-          pi->pi_map[0],pi->pi_map[1]-4);
-      
-      pi->pi_data = fetch_data(pi);
+      //pi->pi_data = fetch_data(pi);
       
     }
  
@@ -333,7 +330,8 @@ unsigned char *fetch_data(struct procinfo *pi)
   unsigned char *data;
   long *fetched;
   int mod;
-  
+  printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
+         pi->pi_map[0],pi->pi_map[1]-4);
   data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
   
   pi->pi_saved_offset = pi->pi_offset;
@@ -358,4 +356,46 @@ unsigned char *fetch_data(struct procinfo *pi)
     free(data);
     
     return pi->pi_data;
+}
+
+int  read_procfs_maps(struct procinfo *pi)
+{
+  char procfs_path[14];
+  FILE *fp;
+  int fd;
+  char buf[128];
+  char unwanted[40];
+  char addr1[20],*addr2;
+  
+  memset(procfs_path,0,14);
+  memset(buf,0,128);
+  memset(unwanted,0,40);
+  memset(addr1,0,20);
+
+  
+  sprintf(procfs_path,"/proc/%d/maps",(int)pi->pi_pid);
+
+  fp = fopen(procfs_path,"r");
+  if(!fp)
+    return -1;
+  printfd(2,DO"Fetch /procfs"NORM"\n");
+  fgets(buf,128,fp);
+  sscanf(buf,"%s-%s %s",
+	 addr1,unwanted,
+	 unwanted
+	 );
+  
+  addr2 = strtok(addr1,"-");
+  addr2 = strtok(NULL,"-");
+  pi->pi_address =pi->pi_map[0] = strtoul(addr1,NULL,16);
+  pi->pi_map[1] = strtoul(addr2,NULL,16);
+  
+  pi->pi_offset = pi->pi_map[1] - pi->pi_map[0];
+
+#if 1
+  printfd(2,DEBUG"%s",buf);
+  printfd(2,DEBUG" Base address : 0x%08x\n",pi->pi_map[0]);
+  printfd(2,DEBUG" End address :  0x%08x\n",pi->pi_map[1]);
+  printfd(2,DEBUG" Offset :  0x%08x\n",pi->pi_offset);
+#endif
 }

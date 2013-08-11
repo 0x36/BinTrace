@@ -54,4 +54,11 @@ void pinfo_destroy(struct procinfo *);
 void exec_target(struct btproc *);
 void attach_target(struct btproc*);
 unsigned char *fetch_data(struct procinfo *);
+
+/* read /procfs for an attached process and even a target process if addr/offset
+ * are not set 
+ * returns : 0 -> Success
+ *	     -1 -> Failure
+ */
+int read_procfs_maps(struct procinfo *);
 #endif /* H_PROC_H */
