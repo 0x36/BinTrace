@@ -121,22 +121,27 @@ int main(int argc,char **argv)
 	    }
 	  
 	  bt_proc->pi->pi_data = fetch_data(bt_proc->pi);
-	  if(opts.raw_opt)
-	    raw_dump(bt_proc->pi);
-	  else
-	    dump_using_memory(bt_proc->pi);
-
-	  pinfo_destroy(bt_proc->pi);
-	  bt_proc_destroy(bt_proc);
 	  
 	}
+      
       /* pid attach */
       if (opts.pid_opt)
 	{
 	  printf(DO"Attached Process ID : "GREEN"%d"NORM"\n",bt_proc->pi->pi_pid);
 	  if(read_procfs_maps(bt_proc->pi) == -1)
 	    die(FATAL"No such process");
+	  
+	  bt_proc->pi->pi_data = fetch_data(bt_proc->pi);
 	}
+      
+      if(opts.raw_opt)
+	raw_dump(bt_proc->pi);
+      else
+	dump_using_memory(bt_proc->pi);
+      
+      pinfo_destroy(bt_proc->pi);
+      bt_proc_destroy(bt_proc);
+      
     }
   return 0;
   
@@ -218,7 +223,7 @@ void btrace_banner(char *arg,int status)
 	  "  -o --offset  <byte offset> \t how many byte you want to leak?\n"
 	  "  -t --target  <binary process>\t binary process wich you want to leak from\n"
 	  "  -A --args    [bianry args] \t target arguments (optional)\n"
-	  "  -d --dump                  \t dump memory data\n"
+	  "  -d --dump                  \t dump memory data (default output)\n"
 	  "  -r --raw                   \t dump raw data \n"
 	  
 	  );

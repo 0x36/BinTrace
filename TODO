@@ -1,0 +1,3 @@
+-> Add a new variable in procinfo data structure wich holds the full
+   path  of any target binary
+-> fetch all memory ranges in procfs
