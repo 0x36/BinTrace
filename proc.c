@@ -360,14 +360,14 @@ unsigned char *fetch_data(struct procinfo *pi)
 
 int  read_procfs_maps(struct procinfo *pi)
 {
-  char procfs_path[14];
+  char procfs_path[20];
   FILE *fp;
   int fd;
   char buf[128];
   char unwanted[40];
   char addr1[20],*addr2;
   
-  memset(procfs_path,0,14);
+  memset(procfs_path,0,20);
   memset(buf,0,128);
   memset(unwanted,0,40);
   memset(addr1,0,20);
