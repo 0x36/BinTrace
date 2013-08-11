@@ -78,10 +78,10 @@ int main(int argc,char **argv)
 	      btrace_banner(*argv,1);
 	    }
 	  if(opts.target_has_args)
-	    bt_proc->args_parser(bt_proc->pi->pi_args,bt_proc);
+	    bt_proc->args_parser((char*)bt_proc->pi->pi_args,bt_proc);
 	  
 	  else
-	    bt_proc->proc_arguments[0] = strdup(bt_proc->exec);
+	    bt_proc->proc_arguments[0] = strdup((const char *)bt_proc->exec);
 	  
 	  if((!opts.force_addr_opt && opts.off_opt) ||
 	     (opts.force_addr_opt && !opts.off_opt))
@@ -150,11 +150,9 @@ int main(int argc,char **argv)
 static struct btproc *parse_args(int argc,char **argv,struct bt_opts *opts)
 {
   int opt,long_opt_index=0;
-  char *target_args;
   struct procinfo *pi;
   struct btproc *bt;
-  
-  int i;
+
 
   /* initialize our options structure  */
   opts->pid_opt=0;
@@ -183,11 +181,11 @@ static struct btproc *parse_args(int argc,char **argv,struct bt_opts *opts)
 	  opts->pid_opt |=1;
 	  break;
 	case 't':
-	  pi->pi_target = strdup(optarg);
+	  pi->pi_target = (u_char*)strdup((const char*)optarg);
 	  opts->target_opt|=1;
 	  break;
 	case 'A':
-	  pi->pi_args = strdup(optarg);
+	  pi->pi_args = (u_char*)strdup((const char*)optarg);
 	  opts->target_has_args |=1;
 	  break;
 	case 'r':

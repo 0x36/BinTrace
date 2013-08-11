@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <errno.h>
-
+#include <unistd.h>
 #include "utils.h"
 #include "proc.h"
 
@@ -30,23 +31,24 @@ int printfd(int fd,const char* fmt,...)
   char data[BT_MAX_DATA_LEN];
   int len;
   va_list ap;
+  int wr;
   va_start(ap,fmt);
   len = vsnprintf(data,BT_MAX_DATA_LEN,fmt,ap);
   va_end(ap);
-  write(fd,data,len);
+  wr =   write(fd,data,len);
+  return wr;
 }
 
 
-static char * ascii(char *position, int c)
+char *ascii(char *position, int c)
 {
-  int i=0;
   
   if (!isprint(c)) c='.';
     sprintf(position, "%c", c);
   return(++position);
 }
  
-static char * hex(char *position, int c)
+char *hex(char *position, int c)
 {
   int offset=3;
    sprintf(position, "%02x ", (unsigned char) c);
@@ -62,8 +64,6 @@ void dump_using_memory(struct procinfo* pi)
   char * hex_offset;
   int i,counter;
   char * ascii_offset; 
-  FILE *ptr;          
- 
   char line[81];      
   i=0;
   
@@ -91,7 +91,7 @@ void dump_using_memory(struct procinfo* pi)
 void raw_dump(struct procinfo *pi)
 {
   int left,written;
-  char *ptr;
+  u_char *ptr;
   ptr = pi->pi_data;
   left = pi->pi_offset;
   while(left >0)

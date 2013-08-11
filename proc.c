@@ -36,14 +36,13 @@ struct procinfo *pinfo_init()
   pi->pi_perm->p_read = 0;
   pi->pi_perm->p_write= 0;
   pi->pi_perm->p_exec = 0;
-  pi->pi_perm->p_symb = (char*)malloc(4*sizeof(char));
+  pi->pi_perm->p_symb = (u_char*)malloc(4*sizeof(u_char));
 
   return pi;
 }
 void parse_target_args(char* arg,struct btproc *bt)
 {
   char *arg_wr;
-  int len;
   int num_args;
   int i;
   char *dup_args = arg;
@@ -70,7 +69,7 @@ void parse_target_args(char* arg,struct btproc *bt)
     {
       printf("line : %d,parse_target_args() : error allocation\n",__LINE__);
     }
-  bt->proc_arguments[0] = strdup(bt->exec);
+  bt->proc_arguments[0] = strdup((const char*)bt->exec);
 
 
   arg_wr = strtok(arg,",");
@@ -79,8 +78,8 @@ void parse_target_args(char* arg,struct btproc *bt)
   while(arg_wr != NULL)
     {
       
-      len = strlen(arg_wr);
-      bt->proc_arguments[i]=strdup(arg_wr);
+      //len = strlen(arg_wr);
+      bt->proc_arguments[i]=strdup((const char*)arg_wr);
       arg_wr = strtok(NULL,",");
       i++;
     }
@@ -121,90 +120,95 @@ struct btproc *bt_proc_init()
 }
 
 u_char *check_target_path(u_char *target,struct perms *perms){
-  
-  char **dirs;
-  u_char *vtarget;
-  char *env_path,*path;
-  int npath;            /* number of path*/
+  char *vtarget;
+  char *env_path;
+    int npath;            /* number of path*/
   char *arg_wr,*full_path;
   int found=0;          /* check if we found the pathfull_path or not */
-  int len;              /* len of dir */
-  int i,j,k=0;
-
-  vtarget=strdup(target);
-
-  if(!access(target,F_OK)){
-    get_file_permissions(target , perms);
-    perms->p_full_path = strdup(target);
-
-  }
-  else
+  char current[1025];
+  char *rpath;
+  
+  vtarget=strdup((const char*)target);
+  memset(current,0,1025);
+  
+  rpath=realpath((const char*)target,current);
+  if(rpath)
+    perms->p_full_path = (u_char*)strdup((const char*)rpath);
+    
+  
+  else 
     {
-      env_path = getenv("PATH");
-      path = strdup(env_path);
-
-      /*check number og directories used in path env*/
-      npath = 0;
-      arg_wr = strtok(env_path,":");
-      
-      while(arg_wr)
-        {
-          full_path = (char*)xmalloc((strlen(arg_wr)+strlen(vtarget)+2)*sizeof(char));
-          memset(full_path,0,strlen(arg_wr)+strlen(vtarget)+2);
-          strcpy(full_path,arg_wr);
-          strcat(full_path,"/");
-          strcat(full_path,vtarget);
-          if(!access(full_path,F_OK))
-            {
-              found = 1; /* found */
-              /*printf("full path : %s\n",full_path);*/
-
-              get_file_permissions(full_path , perms);
-              perms->p_full_path = strdup(full_path);
-              
-              break;
-            }
-          arg_wr = strtok(NULL,":");
-          npath++;
-          free(full_path);
-        }
-      if(!found){
-        printf(FATAL""RED"%s "NORM":not found !\n",vtarget);
-        return NULL;
+      if(!access(( const char*)target,F_OK)){
+	get_file_permissions(target , perms);
+	perms->p_full_path = (u_char*)strdup((const char*)target);
+    
       }
-      free(full_path);
+      else
+	{
+	  env_path = getenv("PATH");
+	  
+	  /*check number og directories used in path env*/
+	  npath = 0;
+	  arg_wr = strtok(env_path,":");
       
-    }
+	  while(arg_wr)
+	    {
+	      full_path = (char*)xmalloc((strlen(arg_wr)+strlen(vtarget)+2)*sizeof(char));
+	      memset(full_path,0,strlen(arg_wr)+strlen(vtarget)+2);
+	      strcpy(full_path,arg_wr);
+	      strcat(full_path,"/");
+	      strcat(full_path,vtarget);
+	      if(!access(full_path,F_OK))
+		{
+		  found = 1; /* found */
+		  /*printf("full path : %s\n",full_path);*/
 
+		  get_file_permissions((u_char*)full_path , perms);
+		  perms->p_full_path = (u_char*)strdup((const char*)full_path);
+              
+		  break;
+		}
+	      arg_wr = strtok(NULL,":");
+	      npath++;
+	      free(full_path);
+	    }
+	  if(!found){
+	    printf(FATAL""RED"%s "NORM":not found !\n",vtarget);
+	    return NULL;
+	  }
+	  free(full_path);
+      
+	}
+    }
 #if 0
-  printf("full path %s\n",perms->p_full_path);  
-  printf("exec :%s\n",vtarget);
-  printf("path :%s\n",env_path);
-  printf("number of dires  : %d\n",npath);
+  printfd(2,DEBUG"full path %s\n",perms->p_full_path);  
+  printfd(2,DEBUG"exec :%s\n",vtarget);
+  printfd(2,DEBUG"path :%s\n",env_path);
+  printfd(2,DEBUG"number of dires  : %d\n",npath);
 #endif
-  //free(path);
+ 
   free(vtarget);
   return perms->p_full_path;
 }
 
-static void get_file_permissions(u_char *path,struct perms *p)
+void get_file_permissions(u_char *path,struct perms *p)
 {
   //printf("path :%s\n",path);
   p->p_read=p->p_write=p->p_exec = 0;
-  if(!access(path,W_OK))
+  if(!access((const char*)path,W_OK))
     p->p_write|=1;
   
-  if(!access(path,R_OK))
+  if(!access((const char*)path,R_OK))
     p->p_read|=1;
  
-  if(!access(path,X_OK))
+  if(!access((const char*)path,X_OK))
     p->p_exec|=1;
   
   /*set symbols */
   memset(p->p_symb,0,4);
-  (p->p_read)?strcat(p->p_symb,"r"):strcat(p->p_symb,"-");
-  p->p_write?strcat(p->p_symb,"w"):strcat(p->p_symb,"-");
-  (p->p_exec)?strcat(p->p_symb,"x"):strcat(p->p_symb,"-");
+  (p->p_read)?strcat((char*)p->p_symb,"r"):strcat((char*)p->p_symb,"-");
+  p->p_write?strcat((char*)p->p_symb,"w"):strcat((char*)p->p_symb,"-");
+  (p->p_exec)?strcat((char*)p->p_symb,"x"):strcat((char*)p->p_symb,"-");
 
 #if 0
   printf("read :"GREEN"%d"NORM" , write :"GREEN"%d"NORM" , exec :"GREEN"%d"NORM"\n",
@@ -261,9 +265,7 @@ void exec_target(struct btproc *bt)
   pid_t pid;
   struct procinfo *pi;
   long ret;
-  int l;
   struct sigaction act;
-  sigset_t blokcMask,emptyMask;
 
   memset(&act,0,sizeof(act));
   act.sa_handler = catch_child_proc;
@@ -288,7 +290,7 @@ void exec_target(struct btproc *bt)
       /* tracing the child process */
       ret = ptrace(PTRACE_TRACEME,0,NULL,NULL);
       /* execting our target process */
-      execve(bt->exec,bt->proc_arguments,NULL);
+      execve((const char*)bt->exec,(char **const )bt->proc_arguments,NULL);
       
       if(ret == -1){
         printfd(STDERR_FILENO,FATAL"line : %d,can't trace the process :"RED"%s"NORM"\n",
@@ -324,12 +326,10 @@ void exec_target(struct btproc *bt)
 
 unsigned char *fetch_data(struct procinfo *pi)
 {
-  char swap[4]={0};
-  int i,j,k,l;
-  unsigned long  counter;
+  int i;
   unsigned char *data;
-  long *fetched;
-  int mod;
+
+
   printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
          pi->pi_map[0],pi->pi_map[1]-4);
   data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
@@ -362,7 +362,6 @@ int  read_procfs_maps(struct procinfo *pi)
 {
   char procfs_path[20];
   FILE *fp;
-  int fd;
   char buf[128];
   char unwanted[40];
   char addr1[20],*addr2;
@@ -398,4 +397,5 @@ int  read_procfs_maps(struct procinfo *pi)
   printfd(2,DEBUG" End address :  0x%08x\n",pi->pi_map[1]);
   printfd(2,DEBUG" Offset :  0x%08x\n",pi->pi_offset);
 #endif
+  return 0;
 }

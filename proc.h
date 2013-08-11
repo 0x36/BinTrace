@@ -10,6 +10,7 @@
 #define MEM_WRITE	2
 #define MEM_READ	4
 
+typedef u_long vaddr_t;
 /* set/get memory permissions */
 struct perms
 {
@@ -21,6 +22,10 @@ struct perms
   u_char *p_symb;
 };
 
+struct map_addr {
+  vaddr_t ma_map[2];
+  struct map_addr *next;
+};
 /* all process infos */
 struct procinfo
 {
@@ -29,7 +34,7 @@ struct procinfo
   u_char *pi_args;
   u_long pi_address;	/* used for --address */
   u_char *pi_data;	/* full content */
-  u_long pi_map[2];	/* holds start/end proc maps*/
+  vaddr_t pi_map[2];	/* holds start/end proc maps*/
   u_long pi_saved_offset;
   u_long pi_offset;
   struct perms *pi_perm;
@@ -47,7 +52,7 @@ struct procinfo *pinfo_init();
 struct perms *get_mem_perms();
 struct btproc *bt_proc_init();
 u_char *check_target_path(u_char*,struct perms*);
-static void get_file_permissions(u_char*,struct perms*);
+void get_file_permissions(u_char*,struct perms*);
 void parse_target_args(char *,struct btproc *);
 void bt_proc_destroy(struct btproc*);
 void pinfo_destroy(struct procinfo *);

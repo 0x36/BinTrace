@@ -28,8 +28,9 @@
  */
 //typedef vaddr_t long;
 
-static char *hex(char *, int);
-static char *ascii(char *, int);
+char *hex(char *, int);
+char *ascii(char *, int);
+
 int printfd(int fd,const char* fmt,...);
 void *xmalloc(int);
 void dump_using_memory(struct procinfo *);

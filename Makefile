@@ -4,7 +4,7 @@ BIN=btrace
 SRC=$(wildcard *.c)
 OBJ=$(SRC:.c=.o)
 DEP=MF.dep
-CFLAGS=-ggdb
+CFLAGS=-ggdb -Wall
 all: $(DEP) $(BIN)
 
 $(DEP):$(SRC)
