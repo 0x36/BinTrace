@@ -121,6 +121,7 @@ struct btproc *bt_proc_init()
 }
 
 u_char *check_target_path(u_char *target,struct perms *perms){
+  
   char **dirs;
   u_char *vtarget;
   char *env_path,*path;
@@ -130,7 +131,7 @@ u_char *check_target_path(u_char *target,struct perms *perms){
   int len;              /* len of dir */
   int i,j,k=0;
 
-  vtarget=target;
+  vtarget=strdup(target);
 
   if(!access(target,F_OK)){
     get_file_permissions(target , perms);
@@ -139,13 +140,6 @@ u_char *check_target_path(u_char *target,struct perms *perms){
   }
   else
     {
-      while(i <= strlen(target)){
-        if(target[i]=='.')
-          i++;
-        else
-          *(vtarget+j++)=*(target+i++);
-      }
-      
       env_path = getenv("PATH");
       path = strdup(env_path);
 
@@ -155,12 +149,11 @@ u_char *check_target_path(u_char *target,struct perms *perms){
       
       while(arg_wr)
         {
-          full_path = (char*)xmalloc(strlen(arg_wr)+strlen(vtarget)+2);
+          full_path = (char*)xmalloc((strlen(arg_wr)+strlen(vtarget)+2)*sizeof(char));
           memset(full_path,0,strlen(arg_wr)+strlen(vtarget)+2);
           strcpy(full_path,arg_wr);
           strcat(full_path,"/");
           strcat(full_path,vtarget);
-
           if(!access(full_path,F_OK))
             {
               found = 1; /* found */
@@ -179,7 +172,7 @@ u_char *check_target_path(u_char *target,struct perms *perms){
         printf(FATAL""RED"%s "NORM":not found !\n",vtarget);
         return NULL;
       }
-        
+      free(full_path);
       
     }
   
@@ -189,6 +182,8 @@ u_char *check_target_path(u_char *target,struct perms *perms){
   printf("path :%s\n",env_path);
   printf("number of dires  : %d\n",npath);
 #endif
+  free(path);
+  free(vtarget);
   return perms->p_full_path;
 }
 
@@ -228,6 +223,7 @@ void bt_proc_destroy(struct btproc* bt)
   
   for(i=0;*(bt->proc_arguments+i);i++)
     free(*(bt->proc_arguments+i));
+
   bt->args_parser = NULL;
 }
 
@@ -297,7 +293,7 @@ void exec_target(struct btproc *bt)
       if(ret == -1){
         printfd(STDERR_FILENO,FATAL"line : %d,can't trace the process :"RED"%s"NORM"\n",
                 __LINE__,strerror(errno));
-        bt_proc_destroy(bt);
+	bt_proc_destroy(bt);
         exit(1);
       }
     }
@@ -305,8 +301,8 @@ void exec_target(struct btproc *bt)
     {
       printfd(STDERR_FILENO,FATAL"line : %d,can't fork :"RED"%s"NORM"\n",
               __LINE__,strerror(errno));
-        bt_proc_destroy(bt);
-        exit(1);
+      bt_proc_destroy(bt);
+      exit(1);
     }
   else
     {

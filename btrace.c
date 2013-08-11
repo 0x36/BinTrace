@@ -53,13 +53,19 @@ int main(int argc,char **argv)
   struct btproc *bt_proc;
   
   bt_proc = parse_args(argc,argv,&opts);
-
+  
   if (opts.target_opt && opts.pid_opt)
     {
       bt_proc_destroy(bt_proc);
       printfd(2,FATAL" You can't choose target and pid together !\n");
       btrace_banner(*argv,1);
-    }else
+    }
+  else if (!opts.target_opt && !opts.pid_opt)
+    {
+      printfd(2,FATAL"No such target or porcess\n");
+      btrace_banner(*argv,1);
+    }
+  else
     {
       /* using target executable */
       if(opts.target_opt)
@@ -95,8 +101,9 @@ int main(int argc,char **argv)
 	    raw_dump(bt_proc->pi);
 	  else
 	    dump_using_memory(bt_proc->pi);
+
 	  pinfo_destroy(bt_proc->pi);
-	  
+	  bt_proc_destroy(bt_proc);
 	}
       
     }
