@@ -343,8 +343,10 @@ void *fetch_data(struct procinfo *pi)
     {
       printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
 	      ma_ptr->ma_map[0],ma_ptr->ma_map[1]);
+      
+      pi->pi_offset = ma_ptr->ma_map[1]-ma_ptr->ma_map[0];
       data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
-  
+      
       pi->pi_saved_offset = pi->pi_offset;
       //ma_ptr->ma_map[0] = pi->pi_address;
 
