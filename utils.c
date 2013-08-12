@@ -116,3 +116,18 @@ void die(const char *msg)
   perror(msg);
   exit(errno);
 }
+
+void reverse_ll(struct map_addr ** maddr)
+{
+  struct map_addr* prev   = NULL;
+  struct map_addr* current = *maddr;
+  struct map_addr* next;
+  while (current != NULL)
+    {
+      next  = current->ma_next; 
+      current->ma_next = prev;  
+      prev = current;
+      current = next;
+    }
+  *maddr = prev;
+}

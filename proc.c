@@ -422,7 +422,8 @@ int read_procfs_maps(struct procinfo *pi)
 	}
     }
   pi->pi_addr = head;
-
+  reverse_ll(&pi->pi_addr);
+  
 #if 0  
 for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
     {
