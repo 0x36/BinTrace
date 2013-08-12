@@ -30,10 +30,11 @@
 
 char *hex(char *, int);
 char *ascii(char *, int);
-
 int printfd(int fd,const char* fmt,...);
 void *xmalloc(int);
 void dump_using_memory(struct procinfo *);
 void raw_dump(struct procinfo *);
 void die(const char *);
+void reverse_ll(struct map_addr **);
+void get_cmdline_by_pid(struct procinfo *);
 #endif /* H_UTILS_H */

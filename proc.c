@@ -399,11 +399,13 @@ int read_procfs_maps(struct procinfo *pi)
   while(fgets(buf,512,fp))
     {
       //00400000-0040b000 r-xp 00000000 08:03 1572888                            /bin/cat
+      
       sscanf(buf,"%lx-%lx %s %s %s %s %255s",
 	     &start,&end,unwanted,unwanted,unwanted,unwanted,file_path);
       
       if(!memcmp(pi->pi_perm->p_full_path,file_path,strlen(pi->pi_perm->p_full_path)))
 	{
+	  //printfd(2,"%s:%s\n",file_path,pi->pi_perm->p_full_path);
 	  ma_ptr = (struct map_addr *)xmalloc(sizeof(struct map_addr));
 	      
 	  ma_ptr->ma_map[0] = start;
@@ -421,10 +423,17 @@ int read_procfs_maps(struct procinfo *pi)
       
 	}
     }
+#if 1  
+for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
+    {
+      printf(BLUE"ADDR : 0x%.08x"NORM"\n",ma_ptr->ma_map[0]);
+    }
+#endif
+
   pi->pi_addr = head;
   reverse_ll(&pi->pi_addr);
   
-#if 0  
+#if 1  
 for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
     {
       printf(BLUE"ADDR : 0x%.08x"NORM"\n",ma_ptr->ma_map[0]);
@@ -447,3 +456,29 @@ for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
 #endif
   return 0;
 }
+
+void get_cmdline_by_pid(struct procinfo *pi)
+{
+  char cmd_path[128];
+  char *cmd[256];
+  char resolved[256];
+
+  FILE *fp;
+
+  memset(cmd_path,0,128);
+  memset(cmd,0,256);
+  sprintf(cmd_path,"/proc/%d/cmdline",pi->pi_pid);
+  fp = fopen(cmd_path,"r");
+  fgets(cmd,256,fp);
+  /*resolve all symlinks */
+  check_target_path(cmd,pi->pi_perm);
+  memset(cmd,0,256);
+  memcpy(cmd,pi->pi_perm->p_full_path,strlen(pi->pi_perm->p_full_path));
+  
+  strcpy(pi->pi_perm->p_full_path, realpath(cmd,resolved));
+#if 0
+  printfd(2,DEBUG"cmdline path : %s\n",cmd_path);
+  printfd(2,DEBUG"cmd is : %s\n",pi->pi_perm->p_full_path);
+#endif
+  
+} 

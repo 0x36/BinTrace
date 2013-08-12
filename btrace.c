@@ -120,9 +120,10 @@ int main(int argc,char **argv)
       if (opts.pid_opt)
 	{
 	  printf(DO"Attached Process ID : "GREEN"%d"NORM"\n",bt_proc->pi->pi_pid);
+	  get_cmdline_by_pid(bt_proc->pi);
 	  if(read_procfs_maps(bt_proc->pi) == -1)
 	    die(FATAL"No such process");
-	  
+
 	  /* it shouldn't return anything*/
 	  fetch_data(bt_proc->pi);
 	}

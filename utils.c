@@ -66,11 +66,11 @@ void dump_using_memory(struct procinfo* pi)
   char * ascii_offset; 
   char line[81];      
   struct map_addr *ma_ptr;
-
+  
   i=0;
   for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
     {
-      printfd(2,DEBUG"mapping : 0x%.08x\n",ma_ptr->ma_map[0]);
+      //printfd(2,DEBUG"mapping : 0x%.08x\n",ma_ptr->ma_map[0]);
       i=0;
       counter=ma_ptr->ma_map[0];
       while (i < pi->pi_offset )
