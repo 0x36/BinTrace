@@ -90,20 +90,13 @@ int main(int argc,char **argv)
 	      bt_proc_destroy(bt_proc);
 	      btrace_banner(*argv,1);
 	    }
-	  
-	  /* If force address and offset are not set we read 
-	   * from profs and fetch memory base address 
-	   * and write new elf binary
-	   *
-	  else if (!opts.force_addr_opt && !opts.off_opt)
-	    {
-	      printfd(2,WARN"PID : %d\n",bt_proc->pi->pi_pid);
-	    }
-	  */
+	  /* if address & offset are set*/
 	  else
 	    {
-	      bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
-	      bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
+	      //bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
+	      //bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
+	      bt_proc->pi->pi_addr->ma_map[0] = bt_proc->pi->pi_address;
+	      bt_proc->pi->pi_addr->ma_map[1] = bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
 	    }
 	  	  
 	  exec_target(bt_proc);
@@ -120,8 +113,7 @@ int main(int argc,char **argv)
 		die("no such process");
 	    }
 	  
-	  bt_proc->pi->pi_data = fetch_data(bt_proc->pi);
-	  
+	  fetch_data(bt_proc->pi);
 	}
       
       /* pid attach */
@@ -131,7 +123,8 @@ int main(int argc,char **argv)
 	  if(read_procfs_maps(bt_proc->pi) == -1)
 	    die(FATAL"No such process");
 	  
-	  bt_proc->pi->pi_data = fetch_data(bt_proc->pi);
+	  /* it shouldn't return anything*/
+	  fetch_data(bt_proc->pi);
 	}
       
       if(opts.raw_opt)

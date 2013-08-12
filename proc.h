@@ -24,8 +24,10 @@ struct perms
 
 struct map_addr {
   vaddr_t ma_map[2];
-  struct map_addr *next;
+  u_char *ma_data;
+  struct map_addr *ma_next;
 };
+
 /* all process infos */
 struct procinfo
 {
@@ -37,6 +39,7 @@ struct procinfo
   vaddr_t pi_map[2];	/* holds start/end proc maps*/
   u_long pi_saved_offset;
   u_long pi_offset;
+  struct map_addr *pi_addr;  
   struct perms *pi_perm;
 };
 
@@ -58,7 +61,11 @@ void bt_proc_destroy(struct btproc*);
 void pinfo_destroy(struct procinfo *);
 void exec_target(struct btproc *);
 void attach_target(struct btproc*);
-unsigned char *fetch_data(struct procinfo *);
+/* fetch data from all memroy ranges 
+ * this procedure shoudn't return anything
+ * it fills map_addr data structure
+ */
+void *fetch_data(struct procinfo *);
 
 /* read /procfs for an attached process and even a target process if addr/offset
  * are not set 

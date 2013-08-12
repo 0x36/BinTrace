@@ -30,8 +30,12 @@ struct procinfo *pinfo_init()
   pi->pi_map[0]=pi->pi_map[1]=0;
   pi->pi_offset =0;
   
+  pi->pi_addr = (struct map_addr*)xmalloc(sizeof(struct map_addr));
+  pi->pi_addr->ma_map[0] = pi->pi_addr->ma_map[1]=0;
+  pi->pi_addr->ma_next = NULL;
+
   pi->pi_perm = (struct perms *)xmalloc(sizeof(struct perms));
-  
+  				      
   /* initialise permission with NULL values */
   pi->pi_perm->p_read = 0;
   pi->pi_perm->p_write= 0;
@@ -316,6 +320,7 @@ void exec_target(struct btproc *bt)
       
     }
  
+/* FIXME */
 #if 0
   int i;
   printfd(STDOUT_FILENO, DEBUG"target : %s\n",bt->exec);
@@ -324,66 +329,106 @@ void exec_target(struct btproc *bt)
 #endif  
 }
 
-unsigned char *fetch_data(struct procinfo *pi)
+void *fetch_data(struct procinfo *pi)
 {
   int i;
   unsigned char *data;
-
-
-  printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
-         pi->pi_map[0],pi->pi_map[1]-4);
-  data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
+  struct map_addr *ma_ptr;
   
-  pi->pi_saved_offset = pi->pi_offset;
-  pi->pi_map[0] = pi->pi_address;
+  /* for testing purpose only */
 
-  memset(data,0,pi->pi_offset+4);
+  /**/
+
+  for(ma_ptr=pi->pi_addr;ma_ptr;ma_ptr = ma_ptr->ma_next)
+    {
+      printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
+	      ma_ptr->ma_map[0],ma_ptr->ma_map[1]);
+      data = (unsigned char*)malloc(pi->pi_offset+4*sizeof(char));
+  
+      pi->pi_saved_offset = pi->pi_offset;
+      //ma_ptr->ma_map[0] = pi->pi_address;
+
+      memset(data,0,pi->pi_offset+4);
   
   //while (pi->pi_offset%4)
   //  pi->pi_offset++;
-
     
-  for(i=0;i<pi->pi_offset;i++)
-    {
-      data[i]= (char)ptrace(PTRACE_PEEKTEXT,pi->pi_pid,
-		      pi->pi_address+i,NULL);
-    }
+      for(i=0;i<pi->pi_offset;i++)
+	{
+	  data[i]= (char)ptrace(PTRACE_PEEKTEXT,pi->pi_pid,
+				ma_ptr->ma_map[0]+i,NULL);
+	}
       
-    pi->pi_data = (unsigned char *)malloc(sizeof(unsigned char)*pi->pi_offset+1);
-    
-    memset(pi->pi_data,0,pi->pi_offset+1);
-    memcpy(pi->pi_data,data,pi->pi_offset);
-    free(data);
-    
-    return pi->pi_data;
+      ma_ptr->ma_data = (unsigned char *)malloc(sizeof(unsigned char)*pi->pi_offset+1);
+      
+      memset(ma_ptr->ma_data,0,pi->pi_offset+1);
+      memcpy(ma_ptr->ma_data,data,pi->pi_offset);
+      free(data);
+    }
+  
 }
 
-int  read_procfs_maps(struct procinfo *pi)
+int read_procfs_maps(struct procinfo *pi)
 {
   char procfs_path[20];
   FILE *fp;
-  char buf[128];
-  char unwanted[40];
+  char buf[512];
+  char unwanted[256];
+  char file_path[256];
   char addr1[20],*addr2;
+  struct map_addr *ma_ptr,*head;
+  u_long start,end;
   
   memset(procfs_path,0,20);
-  memset(buf,0,128);
-  memset(unwanted,0,40);
+  memset(buf,0,512);
+  memset(file_path,512,0);
+  memset(unwanted,0,256);
   memset(addr1,0,20);
 
-  
+  ma_ptr= NULL;
+  head=NULL;
   sprintf(procfs_path,"/proc/%d/maps",(int)pi->pi_pid);
 
   fp = fopen(procfs_path,"r");
   if(!fp)
     return -1;
   printfd(2,DO"Fetch /procfs"NORM"\n");
-  fgets(buf,128,fp);
-  sscanf(buf,"%s-%s %s",
-	 addr1,unwanted,
-	 unwanted
-	 );
   
+  while(fgets(buf,512,fp))
+    {
+      //00400000-0040b000 r-xp 00000000 08:03 1572888                            /bin/cat
+      sscanf(buf,"%lx-%lx %s %s %s %s %255s",
+	     &start,&end,unwanted,unwanted,unwanted,unwanted,file_path);
+      
+      if(!memcmp(pi->pi_perm->p_full_path,file_path,strlen(pi->pi_perm->p_full_path)))
+	{
+	  ma_ptr = (struct map_addr *)xmalloc(sizeof(struct map_addr));
+	      
+	  ma_ptr->ma_map[0] = start;
+	  ma_ptr->ma_map[1] = end;
+	  ma_ptr->ma_next = head;
+	  head = ma_ptr;
+	  
+#if 0
+      printfd(2,GREEN"%s "NORM"\n",pi->pi_perm->p_full_path);
+      printfd(2,GREEN"line : %s"NORM"\n",buf);
+      printfd(2,DEBUG" start : %lx\n",start);
+      printfd(2,DEBUG" end : %lx\n",end);
+      printfd(2,DEBUG" path : %s\n",file_path);
+#endif
+      
+	}
+    }
+  pi->pi_addr = head;
+
+#if 0  
+for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
+    {
+      printf(BLUE"ADDR : 0x%.08x"NORM"\n",ma_ptr->ma_map[0]);
+    }
+#endif
+
+#if 0 
   addr2 = strtok(addr1,"-");
   addr2 = strtok(NULL,"-");
   pi->pi_address =pi->pi_map[0] = strtoul(addr1,NULL,16);
@@ -391,7 +436,7 @@ int  read_procfs_maps(struct procinfo *pi)
   
   pi->pi_offset = pi->pi_map[1] - pi->pi_map[0];
 
-#if 0
+  //#if 0
   printfd(2,DEBUG"%s",buf);
   printfd(2,DEBUG" Base address : 0x%08x\n",pi->pi_map[0]);
   printfd(2,DEBUG" End address :  0x%08x\n",pi->pi_map[1]);

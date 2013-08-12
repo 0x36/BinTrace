@@ -65,40 +65,50 @@ void dump_using_memory(struct procinfo* pi)
   int i,counter;
   char * ascii_offset; 
   char line[81];      
-  i=0;
-  
-  counter=pi->pi_map[0];
-    while (i < pi->pi_offset )
-    {
-      memset(line,0x20, 81);
-      hex_offset   = line+HEX_OFFSET;
-      ascii_offset = line+ASCII_OFFSET;
-      printf(GREEN"0x%.08x"NORM" : ",(int)counter);
-      counter+=16;
-      
-      while ( ascii_offset < line+ASCII_OFFSET+NUM_CHARS
-	      && i < pi->pi_offset )
-        {
-	  c=pi->pi_data[i++];
-	  hex_offset = hex(hex_offset, c);
-	  ascii_offset = ascii(ascii_offset, c);
- 
-        }
-      printf("%s\n", line);
-    }
+  struct map_addr *ma_ptr;
 
+  i=0;
+  for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
+    {
+      printfd(2,DEBUG"mapping : 0x%.08x\n",ma_ptr->ma_map[0]);
+      i=0;
+      counter=ma_ptr->ma_map[0];
+      while (i < pi->pi_offset )
+	{
+	  memset(line,0x20, 81);
+	  hex_offset   = line+HEX_OFFSET;
+	  ascii_offset = line+ASCII_OFFSET;
+	  printf(GREEN"0x%.08x"NORM" : ",(int)counter);
+	  counter+=16;
+	  
+	  while ( ascii_offset < line+ASCII_OFFSET+NUM_CHARS
+		  && i < pi->pi_offset )
+	    {
+	      c=ma_ptr->ma_data[i++];
+	      hex_offset = hex(hex_offset, c);
+	      ascii_offset = ascii(ascii_offset, c);
+	      
+	    }
+	  printf("%s\n", line);
+	}
+    }
 }
 void raw_dump(struct procinfo *pi)
 {
   int left,written;
   u_char *ptr;
-  ptr = pi->pi_data;
-  left = pi->pi_offset;
-  while(left >0)
+  struct map_addr *ma_ptr;
+  
+  for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
     {
-      written = write(1,ptr,left);
-      left -=written; 
-      ptr+=written;
+      ptr = ma_ptr->ma_data;
+      left = pi->pi_offset;
+      while(left >0)
+	{
+	  written = write(1,ptr,left);
+	  left -=written; 
+	  ptr+=written;
+	}
     }
 }
 void die(const char *msg)
