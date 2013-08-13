@@ -69,13 +69,6 @@ int main(int argc,char **argv)
   struct bt_opts opts;
   struct btproc *bt_proc;
 
-#if defined _LINUX64
-  printfd(2,"64-bit\n");
-#elif defined _LINUX32
-  printfd(2,"32-bit \n");
-#endif
-
-
   bt_proc = parse_args(argc,argv,&opts);
   
   if (opts.target_opt && opts.pid_opt)
