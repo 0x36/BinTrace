@@ -61,11 +61,12 @@ void bt_proc_destroy(struct btproc*);
 void pinfo_destroy(struct procinfo *);
 void exec_target(struct btproc *);
 void attach_target(struct btproc*);
+
 /* fetch data from all memroy ranges 
  * this procedure shoudn't return anything
  * it fills map_addr data structure
  */
-void *fetch_data(struct procinfo *);
+void fetch_data(struct procinfo *);
 
 /* read /procfs for an attached process and even a target process if addr/offset
  * are not set 
@@ -73,4 +74,6 @@ void *fetch_data(struct procinfo *);
  *	     -1 -> Failure
  */
 int read_procfs_maps(struct procinfo *);
+
+int attach_process(struct procinfo * );
 #endif /* H_PROC_H */

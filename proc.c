@@ -329,7 +329,7 @@ void exec_target(struct btproc *bt)
 #endif  
 }
 
-void *fetch_data(struct procinfo *pi)
+void fetch_data(struct procinfo *pi)
 {
   int i;
   unsigned char *data;
@@ -377,7 +377,6 @@ int read_procfs_maps(struct procinfo *pi)
   char buf[512];
   char unwanted[256];
   char file_path[256];
-  char addr1[20],*addr2;
   struct map_addr *ma_ptr,*head;
   u_long start,end;
   
@@ -385,7 +384,7 @@ int read_procfs_maps(struct procinfo *pi)
   memset(buf,0,512);
   memset(file_path,512,0);
   memset(unwanted,0,256);
-  memset(addr1,0,20);
+
 
   ma_ptr= NULL;
   head=NULL;
@@ -403,7 +402,7 @@ int read_procfs_maps(struct procinfo *pi)
       sscanf(buf,"%lx-%lx %s %s %s %s %255s",
 	     &start,&end,unwanted,unwanted,unwanted,unwanted,file_path);
       
-      if(!memcmp(pi->pi_perm->p_full_path,file_path,strlen(pi->pi_perm->p_full_path)))
+      if(!memcmp(pi->pi_perm->p_full_path,file_path,strlen((const char *)pi->pi_perm->p_full_path)))
 	{
 	  //printfd(2,"%s:%s\n",file_path,pi->pi_perm->p_full_path);
 	  ma_ptr = (struct map_addr *)xmalloc(sizeof(struct map_addr));
@@ -423,20 +422,20 @@ int read_procfs_maps(struct procinfo *pi)
       
 	}
     }
-#if 1  
+#if 0 
 for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
     {
-      printf(BLUE"ADDR : 0x%.08x"NORM"\n",ma_ptr->ma_map[0]);
+      printf(BLUE"ADDR : 0x%lx"NORM"\n",ma_ptr->ma_map[0]);
     }
 #endif
 
   pi->pi_addr = head;
   reverse_ll(&pi->pi_addr);
   
-#if 1  
+#if 0  
 for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
     {
-      printf(BLUE"ADDR : 0x%.08x"NORM"\n",ma_ptr->ma_map[0]);
+      printf(BLUE"ADDR : 0x%lx"NORM"\n",ma_ptr->ma_map[0]);
     }
 #endif
 
@@ -460,7 +459,7 @@ for(ma_ptr = pi->pi_addr;ma_ptr;ma_ptr=ma_ptr->ma_next)
 void get_cmdline_by_pid(struct procinfo *pi)
 {
   char cmd_path[128];
-  char *cmd[256];
+  char cmd[256];
   char resolved[256];
 
   FILE *fp;
@@ -471,14 +470,26 @@ void get_cmdline_by_pid(struct procinfo *pi)
   fp = fopen(cmd_path,"r");
   fgets(cmd,256,fp);
   /*resolve all symlinks */
-  check_target_path(cmd,pi->pi_perm);
+  check_target_path((u_char*)cmd,pi->pi_perm);
   memset(cmd,0,256);
-  memcpy(cmd,pi->pi_perm->p_full_path,strlen(pi->pi_perm->p_full_path));
+  memcpy(cmd,pi->pi_perm->p_full_path,strlen((const char*)pi->pi_perm->p_full_path));
   
-  strcpy(pi->pi_perm->p_full_path, realpath(cmd,resolved));
+  strcpy((char*)pi->pi_perm->p_full_path, realpath(cmd,resolved));
 #if 0
   printfd(2,DEBUG"cmdline path : %s\n",cmd_path);
   printfd(2,DEBUG"cmd is : %s\n",pi->pi_perm->p_full_path);
 #endif
-  
 } 
+
+int attach_process(struct procinfo *pi)
+{
+  int ret;
+  printfd(2,DO"Attach PID:"GREEN" %d"NORM"  Target :"GREEN" %s"NORM"\n",
+	  pi->pi_pid,pi->pi_perm->p_full_path);
+  
+  ret = ptrace(PTRACE_ATTACH,pi->pi_pid,0,0);
+  if(ret == -1)
+    return ret;
+  waitpid(pi->pi_pid,0,0);
+  return ret;
+}

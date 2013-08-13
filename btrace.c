@@ -119,8 +119,12 @@ int main(int argc,char **argv)
       /* pid attach */
       if (opts.pid_opt)
 	{
+	  if(attach_process(bt_proc->pi)==-1)
+	    die(FATAL"Can't attach process");
+	  
 	  printf(DO"Attached Process ID : "GREEN"%d"NORM"\n",bt_proc->pi->pi_pid);
 	  get_cmdline_by_pid(bt_proc->pi);
+	  
 	  if(read_procfs_maps(bt_proc->pi) == -1)
 	    die(FATAL"No such process");
 
@@ -210,13 +214,13 @@ void btrace_banner(char *arg,int status)
   printfd(1,"Usage : %s <options>  \n",arg);
   printfd(1,"Written By  M.Ghannam (Simo36)\n");
   printfd(1,
-	  "  -p  --attach <process id>  \t set a process id\n"
-	  "  -a --address <memory_addr> \t memory address\n"
-	  "  -o --offset  <byte offset> \t how many byte you want to leak?\n"
-	  "  -t --target  <binary process>\t binary process wich you want to leak from\n"
-	  "  -A --args    [bianry args] \t target arguments (optional)\n"
-	  "  -d --dump                  \t dump memory data (default output)\n"
-	  "  -r --raw                   \t dump raw data \n"
+	  "  -p  --attach  <process id>     \t set a process id\n"
+	  "  -a  --address <memory_addr>   \t memory address\n"
+	  "  -o  --offset  <byte offset>   \t how many byte you want to leak?\n"
+	  "  -t  --target  <binary process>\t binary process wich you want to leak from\n"
+	  "  -A  --args    [bianry args]   \t target arguments (optional)\n"
+	  "  -d  --dump                    \t dump memory data (default output)\n"
+	  "  -r  --raw                     \t dump raw data \n"
 	  
 	  );
   exit(status);
