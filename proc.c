@@ -237,6 +237,7 @@ void bt_proc_destroy(struct btproc* bt)
 
 void pinfo_destroy(struct procinfo *pi)
 {
+  struct map_addr *ma,*tmp;
   
   pi->pi_pid=pi->pi_address =pi->pi_offset=0;
   memset(pi->pi_map,0,2);
@@ -252,6 +253,13 @@ void pinfo_destroy(struct procinfo *pi)
     free(pi->pi_perm->p_symb);
   }
   
+  /* Free linked list */
+  for(ma=pi->pi_addr;ma;ma=tmp)
+    {
+      tmp = ma->ma_next;
+      free(ma);
+      printf(DEBUG"Free");
+    }
 }
 
 static void catch_child_proc(int sig)
@@ -484,9 +492,7 @@ void get_cmdline_by_pid(struct procinfo *pi)
 int attach_process(struct procinfo *pi)
 {
   int ret;
-  printfd(2,DO"Attach PID:"GREEN" %d"NORM"  Target :"GREEN" %s"NORM"\n",
-	  pi->pi_pid,pi->pi_perm->p_full_path);
-  
+   
   ret = ptrace(PTRACE_ATTACH,pi->pi_pid,0,0);
   if(ret == -1)
     return ret;

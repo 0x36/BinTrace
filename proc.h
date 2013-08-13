@@ -10,7 +10,8 @@
 #define MEM_WRITE	2
 #define MEM_READ	4
 
-typedef u_long vaddr_t;
+
+typedef unsigned long vaddr_t;
 /* set/get memory permissions */
 struct perms
 {

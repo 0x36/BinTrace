@@ -17,6 +17,19 @@
 #include "utils.h"
 #include "proc.h"
 
+#if defined __linux__
+
+#if defined __x86_64__
+#define _LINUX64
+#endif /* __x86_64__ */
+
+#if defined (__i386__) || (__i486__) ||( __i686__ )
+#define _LINUX32
+#endif /* __i386__ || __i486__ || __i686__ */
+
+#endif /* __linux__ */
+
+
 
 const struct option lo[]=
   {
@@ -51,7 +64,14 @@ int main(int argc,char **argv)
 {
   struct bt_opts opts;
   struct btproc *bt_proc;
-  
+
+#if defined _LINUX64
+  printfd(2,"64-bit\n");
+#elif defined _LINUX32
+  printfd(2,"32-bit \n");
+#endif
+
+
   bt_proc = parse_args(argc,argv,&opts);
   
   if (opts.target_opt && opts.pid_opt)
@@ -122,12 +142,30 @@ int main(int argc,char **argv)
 	  if(attach_process(bt_proc->pi)==-1)
 	    die(FATAL"Can't attach process");
 	  
-	  printf(DO"Attached Process ID : "GREEN"%d"NORM"\n",bt_proc->pi->pi_pid);
 	  get_cmdline_by_pid(bt_proc->pi);
+	  printfd(2,DO"Attach PID:"GREEN" %d"NORM"  Target :"GREEN" %s"NORM"\n",
+		  bt_proc->pi->pi_pid,bt_proc->pi->pi_perm->p_full_path);
 	  
-	  if(read_procfs_maps(bt_proc->pi) == -1)
-	    die(FATAL"No such process");
-
+	  if((!opts.force_addr_opt && opts.off_opt) ||
+	     (opts.force_addr_opt && !opts.off_opt))
+	    {
+	      printfd(STDERR_FILENO,WARN"You may choose both of address and offset !\n");
+	      bt_proc_destroy(bt_proc);
+	      btrace_banner(*argv,1);
+	    }
+	  /* if address & offset are set*/
+	  else
+	    {
+	      //bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
+	      //bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
+	      bt_proc->pi->pi_addr->ma_map[0] = bt_proc->pi->pi_address;
+	      bt_proc->pi->pi_addr->ma_map[1] = bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
+	    }
+	  
+	  if(!opts.force_addr_opt && !opts.off_opt)
+	    if(read_procfs_maps(bt_proc->pi) == -1)
+	      die(FATAL"No such process");
+	      
 	  /* it shouldn't return anything*/
 	  fetch_data(bt_proc->pi);
 	}
@@ -136,7 +174,7 @@ int main(int argc,char **argv)
 	raw_dump(bt_proc->pi);
       else
 	dump_using_memory(bt_proc->pi);
-      
+      printf(DEBUG"Destroy\n");
       pinfo_destroy(bt_proc->pi);
       bt_proc_destroy(bt_proc);
       
@@ -150,7 +188,7 @@ static struct btproc *parse_args(int argc,char **argv,struct bt_opts *opts)
   int opt,long_opt_index=0;
   struct procinfo *pi;
   struct btproc *bt;
-
+  
 
   /* initialize our options structure  */
   opts->pid_opt=0;
