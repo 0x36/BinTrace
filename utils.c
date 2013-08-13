@@ -62,7 +62,8 @@ void dump_using_memory(struct procinfo* pi)
 {
   int c=' '; 
   char * hex_offset;
-  int i,counter;
+  int i;
+  vaddr_t counter;
   char * ascii_offset; 
   char line[81];      
   struct map_addr *ma_ptr;
@@ -78,7 +79,7 @@ void dump_using_memory(struct procinfo* pi)
 	  memset(line,0x20, 81);
 	  hex_offset   = line+HEX_OFFSET;
 	  ascii_offset = line+ASCII_OFFSET;
-	  printf(GREEN"0x%.08x"NORM" : ",(int)counter);
+	  printf(GREEN""SHOW_ADDR""NORM" : ",counter);
 	  counter+=16;
 	  
 	  while ( ascii_offset < line+ASCII_OFFSET+NUM_CHARS

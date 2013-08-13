@@ -258,7 +258,6 @@ void pinfo_destroy(struct procinfo *pi)
     {
       tmp = ma->ma_next;
       free(ma);
-      printf(DEBUG"Free");
     }
 }
 
@@ -349,7 +348,7 @@ void fetch_data(struct procinfo *pi)
 
   for(ma_ptr=pi->pi_addr;ma_ptr;ma_ptr = ma_ptr->ma_next)
     {
-      printfd(STDERR_FILENO, DO"mapping area : "RED"0x%.08x-0x%.08x\n"NORM,
+      printfd(STDERR_FILENO, DO"mapping area : "RED""SHOW_ADDR"-"SHOW_ADDR"\n"NORM,
 	      ma_ptr->ma_map[0],ma_ptr->ma_map[1]);
       
       pi->pi_offset = ma_ptr->ma_map[1]-ma_ptr->ma_map[0];

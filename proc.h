@@ -11,7 +11,16 @@
 #define MEM_READ	4
 
 
-typedef unsigned long vaddr_t;
+#if defined __x86_64__
+#define SHOW_ADDR "0x%llx"
+typedef unsigned long long vaddr_t;
+
+#elif defined __i386__
+#define SHOW_ADDR "0x%lx"
+typedef unsigned long  vaddr_t;
+
+#endif 
+
 /* set/get memory permissions */
 struct perms
 {

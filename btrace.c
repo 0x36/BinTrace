@@ -27,6 +27,10 @@
 #define _LINUX32
 #endif /* __i386__ || __i486__ || __i686__ */
 
+#if defined _ARM
+#define _LINUX_ARM_
+#endif /* _ARM */
+
 #endif /* __linux__ */
 
 
@@ -174,7 +178,7 @@ int main(int argc,char **argv)
 	raw_dump(bt_proc->pi);
       else
 	dump_using_memory(bt_proc->pi);
-      printf(DEBUG"Destroy\n");
+
       pinfo_destroy(bt_proc->pi);
       bt_proc_destroy(bt_proc);
       
