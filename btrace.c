@@ -86,8 +86,8 @@ int main(int argc, char **argv)
 				btrace_banner(*argv, 1);
 			}
 			if (opts.target_has_args)
-				bt_proc->args_parser((char *)bt_proc->
-						     pi->pi_args, bt_proc);
+				bt_proc->args_parser((char *)bt_proc->pi->
+						     pi_args, bt_proc);
 
 			else
 				bt_proc->proc_arguments[0] =
