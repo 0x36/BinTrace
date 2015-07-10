@@ -10,6 +10,7 @@
 #include <sys/user.h>
 #include <sys/stat.h>
 #include <sys/ptrace.h>
+#include <elf.h>
 
 #include "proc.h"
 #include "utils.h"
@@ -25,6 +26,7 @@ struct procinfo *pinfo_init()
 	pi->pi_pid = 0;
 	pi->pi_target = NULL;	/* we'll reserve a space for
 				 * this later ! */
+	pi->pi_debug = 0;
 	pi->pi_address = 0;
 	pi->pi_stack = 0;
 	pi->pi_data = NULL;	/* we'll figure it out later */
@@ -107,7 +109,6 @@ struct btproc *bt_proc_init()
 	//bt->exec = (char*)malloc(MAX_EXEC_SIZE);
 
 	bt->pi = pinfo_init();
-
 	bt->proc_arguments = (char **)xmalloc(2 * sizeof(char *));
 	bt->proc_arguments[0] = NULL;
 
@@ -340,25 +341,39 @@ void exec_target(struct btproc *bt)
 #endif
 }
 
-void fetch_data(struct procinfo *pi,int stack_dbg)
+void show_mem_debug(struct map_addr *addr)
+{
+	struct map_addr *ma_ptr,*ma_tmp;
+
+	ma_tmp = addr;
+
+	/**/ for (ma_ptr = ma_tmp; ma_ptr; ma_ptr = ma_ptr->ma_next) {
+		printfd(STDERR_FILENO,
+			DO "mapping area : " RED "" SHOW_ADDR "-" SHOW_ADDR "\n"
+			NORM, ma_ptr->ma_map[0], ma_ptr->ma_map[1]);
+	}
+}
+void fetch_data(struct procinfo *pi)
 {
 	int i;
 	unsigned char *data;
 	struct map_addr *ma_ptr,*ma_tmp;
 	
 	/* for testing purpose only */
-	if(stack_dbg == DEBUG_STACK) 
+	if((pi->pi_debug | DEBUG_MASK) & DEBUG_STACK) {
+		//printfd(2,"STACK\n");
 		ma_tmp = pi->pi_stack;
+	}
 	
 	else 
 		ma_tmp = pi->pi_addr;
 	
-	
 	/**/ for (ma_ptr = ma_tmp; ma_ptr; ma_ptr = ma_ptr->ma_next) {
+		/*
 		printfd(STDERR_FILENO,
 			DO "mapping area : " RED "" SHOW_ADDR "-" SHOW_ADDR "\n"
 			NORM, ma_ptr->ma_map[0], ma_ptr->ma_map[1]);
-
+		*/
 		pi->pi_offset = ma_ptr->ma_map[1] - ma_ptr->ma_map[0];
 		data =
 		    (unsigned char *)malloc(pi->pi_offset + 4 * sizeof(char));
@@ -372,13 +387,18 @@ void fetch_data(struct procinfo *pi,int stack_dbg)
 					       ma_ptr->ma_map[0] + i, NULL);
 		}
 
-		ma_ptr->ma_data =
-		    (unsigned char *)malloc(sizeof(unsigned char) *
-					    pi->pi_offset + 1);
+		/* more optimization  */
+		ma_ptr->ma_data = 
+			(unsigned char *)malloc(sizeof(unsigned char) *
+						pi->pi_offset + 1);
 		memset(ma_ptr->ma_data, 0, pi->pi_offset + 1);
 		memcpy(ma_ptr->ma_data, data, pi->pi_offset);
+		
 		free(data);
+		
 	}
+	if((pi->pi_debug | DEBUG_MASK) & DEBUG_DMP)
+		show_mem_debug(ma_tmp);
 }
 
 int read_procfs_maps(struct procinfo *pi)
@@ -502,6 +522,7 @@ void get_cmdline_by_pid(struct procinfo *pi)
 	printfd(2, DEBUG "cmd is : %s\n", pi->pi_perm->p_full_path);
 #endif
 }
+
 
 int attach_process(struct procinfo *pi)
 {

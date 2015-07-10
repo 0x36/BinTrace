@@ -21,6 +21,10 @@ typedef unsigned long vaddr_t;
 #endif
 
 #define DEBUG_STACK	1
+#define DEBUG_DMP	2
+#define DEBUG_MASK	4
+
+#define BT_ELF_DUMP	1
 
 /* set/get memory permissions */
 struct perms {
@@ -30,7 +34,7 @@ struct perms {
 	u_short p_exist:1;
 	u_char *p_full_path;
 	u_char *p_symb;
-};
+} __attribute__((packed));
 
 struct map_addr {
 	vaddr_t ma_map[2];
@@ -48,6 +52,7 @@ struct procinfo {
 	vaddr_t pi_map[2];	/* holds start/end proc maps */
 	u_long pi_saved_offset;
 	u_long pi_offset;
+	u_int pi_debug;
 	struct perms *pi_perm;
 	struct map_addr *pi_addr;
 	struct map_addr *pi_stack;
@@ -73,12 +78,13 @@ void pinfo_destroy(struct procinfo *);
 void exec_target(struct btproc *);
 void attach_target(struct btproc *);
 
+void show_mem_debug(struct map_addr *);
 /* fetch data from all memroy ranges 
  * this procedure shoudn't return anything
  * it fills map_addr data structure
  * 
  */
-void fetch_data(struct procinfo *,int);
+void fetch_data(struct procinfo *);
 
 /* read /procfs for an attached process and even a target process if addr/offset
  * are not set 

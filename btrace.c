@@ -42,10 +42,11 @@ const struct option lo[] = {
 	/* used for dump */
 	{"address", required_argument, 0, 'a'},
 	{"offset", required_argument, 0, 'o'},
-	{"dump-elf", required_argument, 0, 'D'},
+	{"dump-elf", required_argument, 0, 'D'}, /* experimental  */
 	{"dump", required_argument, 0, 'D'},
 	{"stack",no_argument,0,'s'},
 	{"args", required_argument, 0, 'A'},
+	{"regex", required_argument,0,'r'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -54,10 +55,11 @@ struct bt_opts {
 	u_int8_t force_addr_opt;
 	u_int8_t off_opt;
 	u_int8_t raw_opt;
-	u_int8_t stack_opt;
+	u_int8_t debug_opt;
 	u_int8_t use_data_opt;
 	u_int8_t target_opt;
 	u_int8_t target_has_args;
+	u_int8_t elf_dump_opts;
 	
 };
 
@@ -71,6 +73,7 @@ int main(int argc, char **argv)
 
 	bt_proc = parse_args(argc, argv, &opts);
 
+	bt_proc->pi->pi_debug = opts.debug_opt;
 	if (opts.target_opt && opts.pid_opt) {
 		bt_proc_destroy(bt_proc);
 		printfd(2,
@@ -136,7 +139,7 @@ int main(int argc, char **argv)
 					die("no such process");
 			}
 
-			fetch_data(bt_proc->pi,opts.stack_opt);
+			fetch_data(bt_proc->pi);
 		}
 
 		/* pid attach */
@@ -181,14 +184,18 @@ int main(int argc, char **argv)
 			/* it shouldn't return anything 
 			 * BACK TO ME 
 			 */
-			fetch_data(bt_proc->pi,opts.stack_opt);
+			fetch_data(bt_proc->pi);
 		}
 
 		if (opts.raw_opt)
 			raw_dump(bt_proc->pi);
 		else
-			dump_using_memory(bt_proc->pi,opts.stack_opt);
+			dump_using_memory(bt_proc->pi);
 
+		if(opts.elf_dump_opts) {
+			
+		}
+		
 		pinfo_destroy(bt_proc->pi);
 		bt_proc_destroy(bt_proc);
 
@@ -209,9 +216,10 @@ static struct btproc *parse_args(int argc, char **argv, struct bt_opts *opts)
 	opts->off_opt = 0;
 	opts->raw_opt = 0;
 	opts->target_opt = 0;
-	opts->stack_opt = 0;
+	opts->debug_opt = 0;
 	opts->target_has_args = 0;
-
+	opts->elf_dump_opts = 0;
+	
 	/* Default dump */
 	opts->use_data_opt = 1;
 	opts->off_opt = 0;
@@ -248,12 +256,16 @@ static struct btproc *parse_args(int argc, char **argv, struct bt_opts *opts)
 			break;
 		case 'd':
 			opts->use_data_opt |= 1;
+			opts->debug_opt |= DEBUG_DMP;
 			if(!strncmp(optarg,"raw",3))
 				opts->raw_opt |= 1;
 			
 			break;
 		case 's':
-			opts->stack_opt |= DEBUG_STACK;
+			opts->debug_opt |= DEBUG_STACK;
+			break;
+		case 'D':
+			opts->elf_dump_opts |= BT_ELF_DUMP;
 			break;
 		default:
 			btrace_banner(*argv, -1);
@@ -277,7 +289,7 @@ void btrace_banner(char *arg, int status)
 	printfd(1,
 		"Dump facilities : \n"
 		"  -d  --dump     <hex/raw>       \tDump memory data (default output)\n"
-		"  -D  --dump-elf <out_file>       \tDump memory data (default output)\n"
+		"  -D  --dump-elf <out_file>       \tDump ELF binary\n"
 		"  -a  --address  <memory_addr>    \tMemory address\n"
 		"  -o  --offset   <byte offset>    \tHow many byte you want to leak?\n"
 		"  -s  --stack			   \tDump the stack \n"

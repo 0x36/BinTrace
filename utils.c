@@ -57,7 +57,7 @@ char *hex(char *position, int c)
 	return (position + offset);
 }
 
-void dump_using_memory(struct procinfo *pi,int stack_dbg)
+void dump_using_memory(struct procinfo *pi)
 {
 	int c = ' ';
 	char *hex_offset;
@@ -68,12 +68,11 @@ void dump_using_memory(struct procinfo *pi,int stack_dbg)
 	struct map_addr *ma_ptr,*ma_tmp;
 
 	i = 0;
-
-	if(stack_dbg == DEBUG_STACK)
+	if((pi->pi_debug | DEBUG_MASK) & DEBUG_STACK) 
 		ma_tmp = pi->pi_stack;
 	else
 		ma_tmp = pi->pi_addr;
-	
+		
 
 	for (ma_ptr = ma_tmp; ma_ptr; ma_ptr = ma_ptr->ma_next) {
 		//printfd(2,DEBUG"mapping : 0x%.08x\n",ma_ptr->ma_map[0]);
@@ -106,9 +105,14 @@ void raw_dump(struct procinfo *pi)
 {
 	int left, written;
 	u_char *ptr;
-	struct map_addr *ma_ptr;
+	struct map_addr *ma_ptr,*ma_tmp;
+	
+	if((pi->pi_debug | DEBUG_MASK) & DEBUG_STACK)
+		ma_tmp = pi->pi_stack;
+	else 
+		ma_tmp = pi->pi_addr;
 
-	for (ma_ptr = pi->pi_addr; ma_ptr; ma_ptr = ma_ptr->ma_next) {
+	for (ma_ptr = ma_tmp; ma_ptr; ma_ptr = ma_ptr->ma_next) {
 		ptr = ma_ptr->ma_data;
 		left = pi->pi_offset;
 		while (left > 0) {
