@@ -1,4 +1,7 @@
--> Add a new variable in procinfo data structure wich holds the full (DONE)
-   path  of any target binary
+TODO LIST : 
 
--> fetch all memory ranges in procfs
+-> Improve memory dump mechanism and use ELF instead of procinfo
+-> Dump a fully working ELF binary from a process
+-> Resolve all binary/library symbols
+-> Trace a process and show its functions including their paramaters
+-> Trace memory allocation and usage and make a result in graph

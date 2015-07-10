@@ -1,5 +1,23 @@
-/* Mohammed Ghannam 0x36 */
-/* ssd */
+/*
+ $Id: main.c $
+
+ Copyright (C) 2012,2013,2015 Simo36 (mg.simo@0x36.org)
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,30 +35,16 @@
 #include "utils.h"
 #include "proc.h"
 
-#if defined __linux__
-
-#if defined __x86_64__
-#define _LINUX64
-#endif				/* __x86_64__ */
-
-#if defined (__i386__) || (__i486__) ||( __i686__ )
-#define _LINUX32
-#endif				/* __i386__ || __i486__ || __i686__ */
-
-#if defined _ARM
-#define _LINUX_ARM_
-#endif				/* _ARM */
-
-#endif				/* __linux__ */
-
 const struct option lo[] = {
+	/* process invokers  */
 	{"attach", required_argument, 0, 'p'},
+	{"target", required_argument, 0, 't'},
+	/* used for dump */
 	{"address", required_argument, 0, 'a'},
 	{"offset", required_argument, 0, 'o'},
-	{"dump", no_argument, 0, 'd'},
-	{"raw", no_argument, 0, 'r'},
-	{"data", no_argument, 0, 'p'},
-	{"target", required_argument, 0, 't'},
+	{"dump-elf", required_argument, 0, 'D'},
+	{"dump", required_argument, 0, 'D'},
+	{"stack",no_argument,0,'s'},
 	{"args", required_argument, 0, 'A'},
 	{NULL, 0, NULL, 0}
 };
@@ -50,10 +54,11 @@ struct bt_opts {
 	u_int8_t force_addr_opt;
 	u_int8_t off_opt;
 	u_int8_t raw_opt;
+	u_int8_t stack_opt;
 	u_int8_t use_data_opt;
 	u_int8_t target_opt;
 	u_int8_t target_has_args;
-
+	
 };
 
 static struct btproc *parse_args(int, char **, struct bt_opts *);
@@ -103,8 +108,12 @@ int main(int argc, char **argv)
 			}
 			/* if address & offset are set */
 			else {
-				//bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
-				//bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
+				bt_proc->pi->pi_stack->ma_map[0] =
+					bt_proc->pi->pi_address;
+				bt_proc->pi->pi_stack->ma_map[1] =
+					bt_proc->pi->pi_address +
+					bt_proc->pi->pi_offset;
+				
 				bt_proc->pi->pi_addr->ma_map[0] =
 				    bt_proc->pi->pi_address;
 				bt_proc->pi->pi_addr->ma_map[1] =
@@ -127,7 +136,7 @@ int main(int argc, char **argv)
 					die("no such process");
 			}
 
-			fetch_data(bt_proc->pi);
+			fetch_data(bt_proc->pi,opts.stack_opt);
 		}
 
 		/* pid attach */
@@ -151,27 +160,34 @@ int main(int argc, char **argv)
 			}
 			/* if address & offset are set */
 			else {
-				//bt_proc->pi->pi_map[0]= bt_proc->pi->pi_address;
-				//bt_proc->pi->pi_map[1]= bt_proc->pi->pi_address+bt_proc->pi->pi_offset;
+				bt_proc->pi->pi_stack->ma_map[0] =
+					bt_proc->pi->pi_address;
+				bt_proc->pi->pi_stack->ma_map[1] =
+					bt_proc->pi->pi_address +
+					bt_proc->pi->pi_offset;
+				
 				bt_proc->pi->pi_addr->ma_map[0] =
 				    bt_proc->pi->pi_address;
 				bt_proc->pi->pi_addr->ma_map[1] =
 				    bt_proc->pi->pi_address +
 				    bt_proc->pi->pi_offset;
+
 			}
 
 			if (!opts.force_addr_opt && !opts.off_opt)
 				if (read_procfs_maps(bt_proc->pi) == -1)
 					die(FATAL "No such process");
 
-			/* it shouldn't return anything */
-			fetch_data(bt_proc->pi);
+			/* it shouldn't return anything 
+			 * BACK TO ME 
+			 */
+			fetch_data(bt_proc->pi,opts.stack_opt);
 		}
 
 		if (opts.raw_opt)
 			raw_dump(bt_proc->pi);
 		else
-			dump_using_memory(bt_proc->pi);
+			dump_using_memory(bt_proc->pi,opts.stack_opt);
 
 		pinfo_destroy(bt_proc->pi);
 		bt_proc_destroy(bt_proc);
@@ -193,6 +209,7 @@ static struct btproc *parse_args(int argc, char **argv, struct bt_opts *opts)
 	opts->off_opt = 0;
 	opts->raw_opt = 0;
 	opts->target_opt = 0;
+	opts->stack_opt = 0;
 	opts->target_has_args = 0;
 
 	/* Default dump */
@@ -202,7 +219,7 @@ static struct btproc *parse_args(int argc, char **argv, struct bt_opts *opts)
 	pi = bt->pi;
 
 	while ((opt =
-		getopt_long(argc, argv, "a:p:o:drgt:A:h", lo,
+		getopt_long(argc, argv, "a:p:o:d:D:rst:A:h", lo,
 			    &long_opt_index)) != -1) {
 		switch (opt) {
 		case 'a':
@@ -221,10 +238,7 @@ static struct btproc *parse_args(int argc, char **argv, struct bt_opts *opts)
 			pi->pi_args = (u_char *) strdup((const char *)optarg);
 			opts->target_has_args |= 1;
 			break;
-		case 'r':
-			opts->raw_opt |= 1;
-			opts->use_data_opt &= 0;	/* disable data representation */
-			break;
+
 		case 'h':
 			btrace_banner(*argv, 0);
 			break;
@@ -234,6 +248,12 @@ static struct btproc *parse_args(int argc, char **argv, struct bt_opts *opts)
 			break;
 		case 'd':
 			opts->use_data_opt |= 1;
+			if(!strncmp(optarg,"raw",3))
+				opts->raw_opt |= 1;
+			
+			break;
+		case 's':
+			opts->stack_opt |= DEBUG_STACK;
 			break;
 		default:
 			btrace_banner(*argv, -1);
@@ -247,14 +267,23 @@ void btrace_banner(char *arg, int status)
 {
 	//printfd(1,"+-----------------------------------------+\n");
 	printfd(1, "Usage : %s <options>  \n", arg);
-	printfd(1, "Written By  M.Ghannam (Simo36)\n");
+	printfd(1, "Written By  M.Ghannam (Simo36)\n\n");
 	printfd(1,
-		"  -p  --attach  <process id>     \t set a process id\n"
-		"  -a  --address <memory_addr>   \t memory address\n"
-		"  -o  --offset  <byte offset>   \t how many byte you want to leak?\n"
-		"  -t  --target  <binary process>\t binary process wich you want to leak from\n"
-		"  -A  --args    [bianry args]   \t target arguments (optional)\n"
-		"  -d  --dump                    \t dump memory data (default output)\n"
-		"  -r  --raw                     \t dump raw data \n");
+		"Process Invoker methods : \n"
+		"  -p  --attach  <process id>    \tSet a process id\n"
+		"  -t  --target  <binary process>\tBinary process which you want to leak from\n"
+		"  -A  --args    [bianry args]   \tTarget arguments (optional)\n"
+		"\n");
+	printfd(1,
+		"Dump facilities : \n"
+		"  -d  --dump     <hex/raw>       \tDump memory data (default output)\n"
+		"  -D  --dump-elf <out_file>       \tDump memory data (default output)\n"
+		"  -a  --address  <memory_addr>    \tMemory address\n"
+		"  -o  --offset   <byte offset>    \tHow many byte you want to leak?\n"
+		"  -s  --stack			   \tDump the stack \n"
+		"\n"
+		);
+
+		
 	exit(status);
 }

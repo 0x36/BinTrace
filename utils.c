@@ -57,7 +57,7 @@ char *hex(char *position, int c)
 	return (position + offset);
 }
 
-void dump_using_memory(struct procinfo *pi)
+void dump_using_memory(struct procinfo *pi,int stack_dbg)
 {
 	int c = ' ';
 	char *hex_offset;
@@ -65,27 +65,38 @@ void dump_using_memory(struct procinfo *pi)
 	vaddr_t counter;
 	char *ascii_offset;
 	char line[81];
-	struct map_addr *ma_ptr;
+	struct map_addr *ma_ptr,*ma_tmp;
 
 	i = 0;
-	for (ma_ptr = pi->pi_addr; ma_ptr; ma_ptr = ma_ptr->ma_next) {
+
+	if(stack_dbg == DEBUG_STACK)
+		ma_tmp = pi->pi_stack;
+	else
+		ma_tmp = pi->pi_addr;
+	
+
+	for (ma_ptr = ma_tmp; ma_ptr; ma_ptr = ma_ptr->ma_next) {
 		//printfd(2,DEBUG"mapping : 0x%.08x\n",ma_ptr->ma_map[0]);
 		i = 0;
+
 		counter = ma_ptr->ma_map[0];
+		
 		while (i < pi->pi_offset) {
 			memset(line, 0x20, 81);
 			hex_offset = line + HEX_OFFSET;
 			ascii_offset = line + ASCII_OFFSET;
 			printf(GREEN "" SHOW_ADDR "" NORM " : ", counter);
 			counter += 16;
-
+			
 			while (ascii_offset < line + ASCII_OFFSET + NUM_CHARS
 			       && i < pi->pi_offset) {
+				//printf("DDDDDD\n");
 				c = ma_ptr->ma_data[i++];
 				hex_offset = hex(hex_offset, c);
 				ascii_offset = ascii(ascii_offset, c);
 
 			}
+
 			printf("%s\n", line);
 		}
 	}

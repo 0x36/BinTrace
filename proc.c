@@ -26,14 +26,19 @@ struct procinfo *pinfo_init()
 	pi->pi_target = NULL;	/* we'll reserve a space for
 				 * this later ! */
 	pi->pi_address = 0;
+	pi->pi_stack = 0;
 	pi->pi_data = NULL;	/* we'll figure it out later */
 	pi->pi_map[0] = pi->pi_map[1] = 0;
 	pi->pi_offset = 0;
-
+	
 	pi->pi_addr = (struct map_addr *)xmalloc(sizeof(struct map_addr));
 	pi->pi_addr->ma_map[0] = pi->pi_addr->ma_map[1] = 0;
 	pi->pi_addr->ma_next = NULL;
 
+	pi->pi_stack = (struct map_addr *)xmalloc(sizeof(struct map_addr));
+	pi->pi_stack->ma_map[0] = pi->pi_addr->ma_map[1] = 0;
+	pi->pi_stack->ma_next = NULL;
+	
 	pi->pi_perm = (struct perms *)xmalloc(sizeof(struct perms));
 
 	/* initialise permission with NULL values */
@@ -67,7 +72,6 @@ void parse_target_args(char *arg, struct btproc *bt)
 	free(bt->proc_arguments);
 
 	bt->proc_arguments = (char **)xmalloc((num_args + 2) * sizeof(char *));
-	//memset(bt->proc_arguments,0,sizeof(*bt->proc_arguments));
 
 	if (!bt->proc_arguments) {
 		printf("line : %d,parse_target_args() : error allocation\n",
@@ -76,11 +80,10 @@ void parse_target_args(char *arg, struct btproc *bt)
 	bt->proc_arguments[0] = strdup((const char *)bt->exec);
 
 	arg_wr = strtok(arg, ",");
+
 	/* we don't use i=0 because it's already reserved for the target */
 	i = 1;
 	while (arg_wr != NULL) {
-
-		//len = strlen(arg_wr);
 		bt->proc_arguments[i] = strdup((const char *)arg_wr);
 		arg_wr = strtok(NULL, ",");
 		i++;
@@ -197,7 +200,6 @@ u_char *check_target_path(u_char * target, struct perms * perms)
 
 void get_file_permissions(u_char * path, struct perms *p)
 {
-	//printf("path :%s\n",path);
 	p->p_read = p->p_write = p->p_exec = 0;
 	if (!access((const char *)path, W_OK))
 		p->p_write |= 1;
@@ -208,7 +210,7 @@ void get_file_permissions(u_char * path, struct perms *p)
 	if (!access((const char *)path, X_OK))
 		p->p_exec |= 1;
 
-	/*set symbols */
+	/* set symbols */
 	memset(p->p_symb, 0, 4);
 	(p->p_read) ? strcat((char *)p->p_symb, "r") : strcat((char *)p->p_symb,
 							      "-");
@@ -227,9 +229,6 @@ void get_file_permissions(u_char * path, struct perms *p)
 void bt_proc_destroy(struct btproc *bt)
 {
 	int i;
-
-	//if(bt->exec)
-	//  free(bt->exec);
 
 	for (i = 0; *(bt->proc_arguments + i); i++)
 		free(*(bt->proc_arguments + i));
@@ -259,6 +258,12 @@ void pinfo_destroy(struct procinfo *pi)
 	for (ma = pi->pi_addr; ma; ma = tmp) {
 		tmp = ma->ma_next;
 		free(ma);
+	}
+	/* free stack object */
+	if(pi->pi_stack) {
+		if(pi->pi_stack->ma_data)
+			free(pi->pi_stack->ma_data);
+		free(pi->pi_stack);
 	}
 }
 
@@ -335,15 +340,21 @@ void exec_target(struct btproc *bt)
 #endif
 }
 
-void fetch_data(struct procinfo *pi)
+void fetch_data(struct procinfo *pi,int stack_dbg)
 {
 	int i;
 	unsigned char *data;
-	struct map_addr *ma_ptr;
-
+	struct map_addr *ma_ptr,*ma_tmp;
+	
 	/* for testing purpose only */
-
-	 /**/ for (ma_ptr = pi->pi_addr; ma_ptr; ma_ptr = ma_ptr->ma_next) {
+	if(stack_dbg == DEBUG_STACK) 
+		ma_tmp = pi->pi_stack;
+	
+	else 
+		ma_tmp = pi->pi_addr;
+	
+	
+	/**/ for (ma_ptr = ma_tmp; ma_ptr; ma_ptr = ma_ptr->ma_next) {
 		printfd(STDERR_FILENO,
 			DO "mapping area : " RED "" SHOW_ADDR "-" SHOW_ADDR "\n"
 			NORM, ma_ptr->ma_map[0], ma_ptr->ma_map[1]);
@@ -353,27 +364,21 @@ void fetch_data(struct procinfo *pi)
 		    (unsigned char *)malloc(pi->pi_offset + 4 * sizeof(char));
 
 		pi->pi_saved_offset = pi->pi_offset;
-		//ma_ptr->ma_map[0] = pi->pi_address;
 
 		memset(data, 0, pi->pi_offset + 4);
 
-		//while (pi->pi_offset%4)
-		//  pi->pi_offset++;
-
 		for (i = 0; i < pi->pi_offset; i++) {
-			data[i] = (char)ptrace(PTRACE_PEEKTEXT, pi->pi_pid,
+			data[i] = (char)ptrace(PTRACE_PEEKDATA, pi->pi_pid,
 					       ma_ptr->ma_map[0] + i, NULL);
 		}
 
 		ma_ptr->ma_data =
 		    (unsigned char *)malloc(sizeof(unsigned char) *
 					    pi->pi_offset + 1);
-
 		memset(ma_ptr->ma_data, 0, pi->pi_offset + 1);
 		memcpy(ma_ptr->ma_data, data, pi->pi_offset);
 		free(data);
 	}
-
 }
 
 int read_procfs_maps(struct procinfo *pi)
@@ -402,15 +407,14 @@ int read_procfs_maps(struct procinfo *pi)
 
 	while (fgets(buf, 512, fp)) {
 		//00400000-0040b000 r-xp 00000000 08:03 1572888                            /bin/cat
-
-		sscanf(buf, "%lx-%lx %s %s %s %s %255s",
+		
+		sscanf(buf, "%lx-%lx %s %s %s %s %255s\n",
 		       &start, &end, unwanted, unwanted, unwanted, unwanted,
 		       file_path);
 
 		if (!memcmp
 		    (pi->pi_perm->p_full_path, file_path,
 		     strlen((const char *)pi->pi_perm->p_full_path))) {
-			//printfd(2,"%s:%s\n",file_path,pi->pi_perm->p_full_path);
 			ma_ptr =
 			    (struct map_addr *)xmalloc(sizeof(struct map_addr));
 
@@ -423,11 +427,22 @@ int read_procfs_maps(struct procinfo *pi)
 			printfd(2, GREEN "%s " NORM "\n",
 				pi->pi_perm->p_full_path);
 			printfd(2, GREEN "line : %s" NORM "\n", buf);
-			printfd(2, DEBUG " start : %lx\n", start);
-			printfd(2, DEBUG " end : %lx\n", end);
+			printfd(2, DEBUG " start : %lx\n", ma_ptr->ma_map[0]);
+			printfd(2, DEBUG " end : %lx\n", ma_ptr->ma_map[1]);
 			printfd(2, DEBUG " path : %s\n", file_path);
 #endif
 
+		}
+		else if (!memcmp("[stack]", file_path,7)) {
+			pi->pi_stack =
+				(struct map_addr *)xmalloc(sizeof(struct map_addr));
+			pi->pi_stack->ma_map[0] = start;
+			pi->pi_stack->ma_map[1] = end;
+			pi->pi_stack->ma_next = NULL;
+		}
+		/* It doesn't reach here  */
+		else if (!memcmp("[heap]", file_path,6)) {
+			//printfd(2,"FIXME\n");
 		}
 	}
 #if 0
@@ -453,7 +468,6 @@ int read_procfs_maps(struct procinfo *pi)
 
 	pi->pi_offset = pi->pi_map[1] - pi->pi_map[0];
 
-	//#if 0
 	printfd(2, DEBUG "%s", buf);
 	printfd(2, DEBUG " Base address : 0x%08x\n", pi->pi_map[0]);
 	printfd(2, DEBUG " End address :  0x%08x\n", pi->pi_map[1]);
@@ -475,6 +489,7 @@ void get_cmdline_by_pid(struct procinfo *pi)
 	sprintf(cmd_path, "/proc/%d/cmdline", pi->pi_pid);
 	fp = fopen(cmd_path, "r");
 	fgets(cmd, 256, fp);
+
 	/*resolve all symlinks */
 	check_target_path((u_char *) cmd, pi->pi_perm);
 	memset(cmd, 0, 256);
